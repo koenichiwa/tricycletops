@@ -16,10 +16,28 @@ async fn main(_spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
     
     info!("Initializing the program");
-    let mut led_pin = Output::new(p.PIN_16, Level::Low);
+    let mut motor_a_speed = Output::new(p.PIN_1, Level::Low);
+    let mut motor_a_direction = Output::new(p.PIN_0, Level::Low);
+
+    let mut motor_b_speed = Output::new(p.PIN_3, Level::Low);
+    let mut motor_b_direction = Output::new(p.PIN_2, Level::Low);
+
     loop {
         info!("Toggle led pin");
-        led_pin.toggle();
+        motor_a_speed.set_high();
+
+        Timer::after_secs(1).await;
+
+        motor_a_speed.set_low();
+
+        Timer::after_secs(1).await;
+
+        motor_b_speed.set_high();
+
+        Timer::after_secs(1).await;
+
+        motor_b_speed.set_low();
+
         Timer::after_secs(1).await;
     }
 }
