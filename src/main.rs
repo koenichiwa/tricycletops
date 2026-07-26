@@ -1,41 +1,44 @@
 #![no_std]
 #![no_main]
 
-mod motor_control;
 mod car_control;
+mod motor_control;
 
+use car_control::CarControl;
 use embassy_executor::Spawner;
 use embassy_rp::gpio::{Level, Output};
 use embassy_rp::pwm::{Config, Pwm};
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
-use embassy_sync::channel::{Channel, Receiver};
+use embassy_sync::signal::Signal;
 use embassy_time::Timer;
 use motor_control::MotorControl;
-use car_control::CarControl;
 
 // defmt Logging
-use defmt_rtt as _;
 use defmt::info;
+use defmt_rtt as _;
 
 use panic_probe as _;
 
 #[derive(Clone, Copy, defmt::Format)]
 pub struct DriveCommand {
-    left: f32, 
+    left: f32,
     right: f32,
 }
 
-// Bounded MPMC channel with a capacity of 4 messages
-static CAR_COMMAND_CHANNEL: Channel<ThreadModeRawMutex, DriveCommand, 4> = Channel::new();
+// Bounded MPMC channel with a capacity of 1 message
+static CAR_COMMAND_SIGNAL: Signal<ThreadModeRawMutex, DriveCommand> = Signal::new();
 
 #[embassy_executor::task]
 async fn car_control_task(
     mut car: CarControl<'static>,
-    receiver: Receiver<'static, ThreadModeRawMutex, DriveCommand, 4>,
+    drive_command_signal: &'static Signal<ThreadModeRawMutex, DriveCommand>,
 ) {
     loop {
-        let DriveCommand { left, right } = receiver.receive().await;
-        info!("Car control task: setting speeds left={}, right={}", left, right);
+        let DriveCommand { left, right } = drive_command_signal.wait().await;
+        info!(
+            "Car control task: setting speeds left={}, right={}",
+            left, right
+        );
         if let Err(_error) = car.set_speeds(left, right) {
             break;
         }
@@ -47,7 +50,7 @@ async fn car_control_task(
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
-    
+
     info!("Initializing the program");
 
     // PWM configuration: top sets the PWM period/resolution
@@ -64,28 +67,33 @@ async fn main(spawner: Spawner) {
     let motor_b = MotorControl::new(motor_b_speed, motor_b_direction);
 
     let car = CarControl::new(motor_a, motor_b);
-
-    // Get the receiver handle and spawn the control task
-    let receiver = CAR_COMMAND_CHANNEL.receiver();
-    spawner.spawn(car_control_task(car, receiver)).unwrap();
-
-    // Get the sender handle for sending commands
-    let sender = CAR_COMMAND_CHANNEL.sender();
+    spawner
+        .spawn(car_control_task(car, &CAR_COMMAND_SIGNAL))
+        .unwrap();
 
     // Test script. Here we should fetch data from a source
     loop {
         info!("Sending Drive command (0.7, -0.7)");
-        sender.send(DriveCommand { left: 0.7, right: -0.7 }).await;
+        CAR_COMMAND_SIGNAL.signal(DriveCommand {
+            left: 0.7,
+            right: -0.7,
+        });
 
         Timer::after_secs(3).await;
 
         info!("Sending Drive command (0.4, -0.4) - Spin");
-        sender.send(DriveCommand { left: 0.9, right: -0.9 }).await;
+        CAR_COMMAND_SIGNAL.signal(DriveCommand {
+            left: 0.9,
+            right: -0.9,
+        });
 
         Timer::after_secs(2).await;
 
         info!("Sending Stop command");
-        sender.send(DriveCommand {left: 0.0, right: 0.0}).await;
+        CAR_COMMAND_SIGNAL.signal(DriveCommand {
+            left: 0.0,
+            right: 0.0,
+        });
 
         Timer::after_secs(2).await;
     }
