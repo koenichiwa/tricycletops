@@ -1,3 +1,5 @@
+use embassy_rp::pwm::PwmError;
+
 use crate::motor_control::MotorControl;
 
 pub struct CarControl<'a> {
@@ -14,16 +16,17 @@ impl<'a> CarControl<'a> {
     }
 
     /// Set individual speeds for left and right motors.
-    pub fn set_speeds(&mut self, left_speed: f32, right_speed: f32) {
-        let left_percent =  (left_speed * 100f32) as i8;
+    /// Inputs should be floats between -1.0 and 1.0.
+    pub fn set_speeds(&mut self, left_speed: f32, right_speed: f32) -> Result<(), PwmError> {
+        let left_speed = left_speed.clamp(-1.0, 1.0);
+        let right_speed = right_speed.clamp(-1.0, 1.0);
+
+        let left_percent = (left_speed * 100f32) as i8;
         let right_percent = (right_speed * 100f32) as i8;
 
-        self.left_motor.set_speed(left_percent);
-        self.right_motor.set_speed(right_percent);
-    }
+        self.left_motor.set_speed(left_percent)?;
+        self.right_motor.set_speed(right_percent)?;
 
-    /// Stop the car immediately (both motors set to 0% speed).
-    pub fn stop(&mut self) {
-        self.set_speeds(0f32, 0f32);
+        Ok(())
     }
 }
