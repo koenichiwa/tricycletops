@@ -24,34 +24,27 @@ async fn main(_spawner: Spawner) {
     config.compare_b = 0; // Start with 0% duty cycle (stopped)
 
     // Motor A: PIN_1 is Slice 0 Channel B
-    let mut motor_a_speed = Pwm::new_output_b(p.PWM_SLICE0, p.PIN_1, config.clone());
     let mut motor_a_direction = Output::new(p.PIN_0, Level::Low);
+    let mut motor_a_speed = Pwm::new_output_b(p.PWM_SLICE0, p.PIN_1, config.clone());
 
     // Motor B: PIN_3 is Slice 1 Channel B
-    let mut motor_b_speed = Pwm::new_output_b(p.PWM_SLICE1, p.PIN_3, config.clone());
     let mut motor_b_direction = Output::new(p.PIN_2, Level::Low);
+    let mut motor_b_speed = Pwm::new_output_b(p.PWM_SLICE1, p.PIN_3, config.clone());
+
+    let mut speed = 70;
 
     loop {
-        info!("Running Motor A at 75% speed");
-        motor_a_direction.set_low();
-        motor_a_speed.set_duty_cycle_percent(75).unwrap();
+        speed += 1;
+        if speed <= 100 {
+            motor_a_speed.set_duty_cycle_percent(speed).unwrap();
+            motor_b_speed.set_duty_cycle_percent(speed).unwrap();
+            Timer::after_millis(200).await;
 
-        Timer::after_secs(2).await;
-
-        info!("Stopping Motor A");
-        motor_a_speed.set_duty_cycle_percent(0).unwrap();
-
-        Timer::after_secs(1).await;
-
-        info!("Running Motor B at 50% speed");
-        motor_b_direction.set_low();
-        motor_b_speed.set_duty_cycle_percent(50).unwrap();
-
-        Timer::after_secs(2).await;
-
-        info!("Stopping Motor B");
-        motor_b_speed.set_duty_cycle_percent(0).unwrap();
-
-        Timer::after_secs(1).await;
+        } else {
+            speed = 70;
+            motor_a_speed.set_duty_cycle_fully_off();
+            motor_b_speed.set_duty_cycle_fully_off();
+            Timer::after_secs(1).await;
+        }
     }
 }
