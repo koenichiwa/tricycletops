@@ -16,15 +16,17 @@ impl<'a> MotorControl<'a> {
         }
     }
 
-    pub fn set_speed(&mut self, percent: i8) -> Result<(), PwmError> {
-        let percent = percent.clamp(-100, 100);
-        let _max_duty = self.speed_pin.max_duty_cycle();
+    pub fn set_speed(&mut self, speed: f32) -> Result<(), PwmError> {
+        let speed = speed.clamp(-1.0, 1.0);
 
-        match percent.cmp(&0) {
+        let max_duty = self.speed_pin.max_duty_cycle();
+
+        let set_duty = (speed * max_duty as f32) as i32;
+        match set_duty.cmp(&0) {
             core::cmp::Ordering::Less => {
                 self.direction_pin.set_high();
-                let speed_percent = percent.unsigned_abs();
-                self.speed_pin.set_duty_cycle_percent(100 - speed_percent)?;
+                let set_duty = set_duty.unsigned_abs() as u16;
+                self.speed_pin.set_duty_cycle(max_duty - set_duty)?;
             }
             core::cmp::Ordering::Equal => {
                 self.direction_pin.set_low();
@@ -32,8 +34,7 @@ impl<'a> MotorControl<'a> {
             }
             core::cmp::Ordering::Greater => {
                 self.direction_pin.set_low();
-                self.speed_pin
-                    .set_duty_cycle_percent(percent.unsigned_abs())?;
+                self.speed_pin.set_duty_cycle(set_duty as u16)?;
             }
         }
 
