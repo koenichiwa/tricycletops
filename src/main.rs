@@ -42,9 +42,17 @@ async fn main(_spawner: Spawner) {
 
         } else {
             speed = 70;
-            motor_a_speed.set_duty_cycle_fully_off();
-            motor_b_speed.set_duty_cycle_fully_off();
+            motor_a_speed.set_duty_cycle_fully_off().unwrap();
+            motor_b_speed.set_duty_cycle_fully_off().unwrap();
             Timer::after_secs(1).await;
+
+            config.invert_b = !config.invert_b;
+
+
+            motor_a_direction.toggle();
+            motor_b_direction.toggle();
+            motor_a_speed.set_config(&config);
+            motor_b_speed.set_config(&config);
         }
     }
 }
