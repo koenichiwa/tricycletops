@@ -4,13 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-embassy-executor = { version = "0.9.0", features = [
-    "arch-cortex-m", 
+embassy-executor = { version = "0.10.0", features = [
+    "platform-cortex-m", 
     "executor-thread", 
     "executor-interrupt", 
     "defmt",
 ] }
-embassy-rp = { version = "0.9.0", features = [
+embassy-rp = { version = "0.10.0", features = [
     "unstable-pac", 
     "time-driver", 
     "critical-section-impl", 
@@ -21,14 +21,32 @@ embassy-time = { version = "0.5.0", features = [
     "defmt-timestamp-uptime",
     "defmt",
 ] }
-embassy-sync = { version = "0.7.2" }
+embassy-sync = { version = "0.8.0" }
+
+# Bluetooth
+cyw43 = { version = "0.7.0", features = ["defmt", "firmware-logs", "bluetooth"] }
+cyw43-pio = { version = "0.10.0", features = ["defmt"] }
+trouble-host = { version = "0.7.0", features = ["defmt", "gatt", "derive"] }
+static_cell = "2.1.0"
+portable-atomic = { version = "1.5.1", features = ["critical-section"] }
 
 cortex-m = { version = "0.7.6", features = ["inline-asm"] }
 cortex-m-rt = "0.7.0"
 # critical-section = "1.1"
 
-# defmt Logging
-defmt = "1.0.1"
+# defmt Logging 
+defmt = "1.1.1"
 defmt-rtt = "1.1.0"
 
 panic-probe = { version = "1.0.0", features = ["print-defmt"] }
+
+[build-dependencies]
+reqwest = { version = "0.13.4", features = ["blocking"]}
+
+[patch.crates-io]
+cyw43 = { version = "0.7.0", git = "https://github.com/embassy-rs/embassy.git", rev = "1d3c3de"}
+cyw43-pio = { version = "0.10.0", git = "https://github.com/embassy-rs/embassy.git", rev = "1d3c3de"}
+embassy-rp = { version = "0.10.0", git = "https://github.com/embassy-rs/embassy.git", rev = "1d3c3de"}
+embassy-sync = { version = "0.8.0", git = "https://github.com/embassy-rs/embassy.git", rev = "1d3c3de"}
+embassy-executor = { version = "0.10.0", git = "https://github.com/embassy-rs/embassy.git", rev = "1d3c3de"}
+embassy-time = { version = "0.5.1", git = "https://github.com/embassy-rs/embassy.git", rev = "1d3c3de"}
