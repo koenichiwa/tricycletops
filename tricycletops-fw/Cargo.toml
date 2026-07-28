@@ -5,15 +5,15 @@ edition = "2024"
 
 [dependencies]
 embassy-executor = { version = "0.10.0", features = [
-    "platform-cortex-m", 
-    "executor-thread", 
-    "executor-interrupt", 
+    "platform-cortex-m",
+    "executor-thread",
+    "executor-interrupt",
     "defmt",
 ] }
 embassy-rp = { version = "0.10.0", features = [
-    "unstable-pac", 
-    "time-driver", 
-    "critical-section-impl", 
+    "unstable-pac",
+    "time-driver",
+    "critical-section-impl",
     "rp2040",
     "defmt",
 ]}
@@ -34,7 +34,7 @@ cortex-m = { version = "0.7.6", features = ["inline-asm"] }
 cortex-m-rt = "0.7.0"
 # critical-section = "1.1"
 
-# defmt Logging 
+# defmt Logging
 defmt = "1.1.1"
 defmt-rtt = "1.1.0"
 
@@ -51,4 +51,3 @@ embassy-rp = { version = "0.10.0", git = "https://github.com/embassy-rs/embassy.
 embassy-sync = { version = "0.8.0", git = "https://github.com/embassy-rs/embassy.git", rev = "1d3c3de"}
 embassy-executor = { version = "0.10.0", git = "https://github.com/embassy-rs/embassy.git", rev = "1d3c3de"}
 embassy-time = { version = "0.5.1", git = "https://github.com/embassy-rs/embassy.git", rev = "1d3c3de"}
-

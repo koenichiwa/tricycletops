@@ -1,0 +1,40 @@
+# Pre-commit configuration for Tricycletops
+# See https://pre-commit.com for more information
+# To install: pip install pre-commit && pre-commit install
+
+repos:
+  # Standard out-of-the-box checks (including YAML and TOML syntax verification)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-yaml
+      - id: check-toml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  # Local repository-specific validation checks
+  - repo: local
+    hooks:
+      # Rust Firmware - Code Formatting Check
+      - id: cargo-fmt
+        name: Cargo Fmt
+        entry: bash -c "cd tricycletops-fw && cargo fmt --all -- --check"
+        language: system
+        types: [rust]
+        pass_filenames: false
+
+      # Rust Firmware - Clippy Lint Checks
+      - id: cargo-clippy
+        name: Cargo Clippy
+        entry: bash -c "cd tricycletops-fw && cargo clippy -- -D warnings"
+        language: system
+        types: [rust]
+        pass_filenames: false
+
+      # Android App - Gradle Lint Checks
+      - id: gradle-lint
+        name: Gradle Lint
+        entry: bash -c "cd tricycletops-app && ./gradlew lint"
+        language: system
+        files: ^tricycletops-app/
+        pass_filenames: false
