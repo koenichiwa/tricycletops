@@ -23,7 +23,7 @@
             "coreConfigs": [
                 {
                     "coreIndex": 0,
-                    "programBinary": "target/thumbv6m-none-eabi/debug/kutbot",
+                    "programBinary": "target/thumbv6m-none-eabi/debug/tricycletops-fw",
                     "rttEnabled": true,
                     "svdFile": "./.vscode/rp2040.svd",
                 }
