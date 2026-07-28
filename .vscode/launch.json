@@ -3,7 +3,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "preLaunchTask": "rust: cargo build",
+            "preLaunchTask": "rust: cargo build tricycletops-fw",
             "type": "probe-rs-debug",
             "request": "launch",
             "name": "rp2040-project",
@@ -23,7 +23,7 @@
             "coreConfigs": [
                 {
                     "coreIndex": 0,
-                    "programBinary": "target/thumbv6m-none-eabi/debug/tricycletops-fw",
+                    "programBinary": "tricycletops-fw/target/thumbv6m-none-eabi/debug/tricycletops-fw",
                     "rttEnabled": true,
                     "svdFile": "./.vscode/rp2040.svd",
                 }
