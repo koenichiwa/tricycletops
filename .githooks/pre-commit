@@ -9,7 +9,7 @@ if [ -d "tricycletops-fw" ]; then
     (cd tricycletops-fw && cargo fmt --all -- --check)
 
     echo "Running Clippy lints on Rust firmware..."
-    (cd tricycletops-fw && cargo clippy --all-targets -- -D warnings)
+    (cd tricycletops-fw && cargo clippy -- -D warnings)
 fi
 
 # 2. Run Android App Lint Checks

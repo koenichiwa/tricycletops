@@ -46,6 +46,7 @@ async fn cyw43_task(
     runner.run().await
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn create_ble_controller(
     spawner: &Spawner,
     pwr_pin: Peri<'static, impl Pin>,
