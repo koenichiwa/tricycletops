@@ -31,7 +31,7 @@ struct CarService {
 pub async fn run<C>(
     controller: C,
     command_signal: &'static Signal<ThreadModeRawMutex, DriveCommand>,
-    led_pin: Output<'static>
+    led_pin: Output<'static>,
 ) where
     C: Controller,
 {
@@ -107,19 +107,19 @@ async fn gatt_events_task<P: PacketPool>(
         match conn.next().await {
             GattConnectionEvent::Disconnected { reason } => break reason,
             GattConnectionEvent::Gatt { event } => {
-                if let GattEvent::Write(write_event) = &event {
-                    if write_event.handle() == drive_command_char.handle {
-                            let mut command = None;
+                if let GattEvent::Write(write_event) = &event
+                    && write_event.handle() == drive_command_char.handle
+                {
+                    let mut command = None;
 
-                            write_event.with_data(|_, data| {
-                                command = decode_drive_command(data);
-                            });
+                    write_event.with_data(|_, data| {
+                        command = decode_drive_command(data);
+                    });
 
-                            if let Some(command) = command {
-                                conn.set(&drive_command_char, &encode_drive_command(command))?;
-                                command_signal.signal(command);
-                            }
-                        }
+                    if let Some(command) = command {
+                        conn.set(&drive_command_char, &encode_drive_command(command))?;
+                        command_signal.signal(command);
+                    }
                 }
                 let reply = event.accept();
                 // This step is also performed at drop(), but writing it explicitly is necessary
@@ -165,7 +165,6 @@ async fn advertise<'values, 'server, C: Controller>(
     info!("[adv] connection established");
     Ok(conn)
 }
-
 
 fn decode_drive_command(data: &[u8]) -> Option<DriveCommand> {
     if data.len() != 8 {
