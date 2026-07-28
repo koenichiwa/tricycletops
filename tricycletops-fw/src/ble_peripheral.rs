@@ -66,7 +66,7 @@ pub async fn run<C>(
                 }
                 Err(e) => {
                     let e = defmt::Debug2Format(&e);
-                    panic!("[adv] error: {:?}", e);
+                    panic!("[adv] error: {e:?}");
                 }
             }
         }
@@ -80,7 +80,7 @@ async fn ble_task<C: Controller, P: PacketPool>(mut runner: Runner<'_, C, P>) {
     loop {
         if let Err(e) = runner.run().await {
             let e = defmt::Debug2Format(&e);
-            panic!("[ble_task] error: {:?}", e);
+            panic!("[ble_task] error: {e:?}");
         }
     }
 }
@@ -127,7 +127,7 @@ async fn gatt_events_task<P: PacketPool>(
                 match reply {
                     Ok(reply) => reply.send().await,
                     Err(e) => warn!("[gatt] error sending response: {:?}", e),
-                };
+                }
             }
             _ => {} // ignore other Gatt Connection Events
         }
@@ -153,7 +153,7 @@ async fn advertise<'values, 'server, C: Controller>(
     )?;
     let advertiser = peripheral
         .advertise(
-            &Default::default(),
+            &AdvertisementParameters::default(),
             Advertisement::ConnectableScannableUndirected {
                 adv_data: &advertiser_data[..len],
                 scan_data: &[],

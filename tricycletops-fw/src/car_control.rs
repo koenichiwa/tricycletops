@@ -19,7 +19,7 @@ pub struct CarControl<'a> {
     right_motor: MotorControl<'a>,
 }
 
-impl<'a> CarControl<'a> {
+impl CarControl<'_> {
     pub fn new<SliceLeft, SpeedLeft, SliceRight, SpeedRight>(
         motor_left_pwm_slice: Peri<'static, SliceLeft>,
         motor_left_speed: Peri<'static, SpeedLeft>,

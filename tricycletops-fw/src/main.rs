@@ -10,6 +10,7 @@ use cyw43::bluetooth::BtDriver;
 use cyw43::{Cyw43439, aligned_bytes};
 use cyw43_pio::PioSpi;
 use embassy_executor::Spawner;
+use embassy_rp::config::Config;
 use embassy_rp::gpio::{Level, Output, Pin};
 use embassy_rp::peripherals::{DMA_CH0, DMA_CH1, PIO0};
 use embassy_rp::pio::{InterruptHandler as PioInterruptHandler, Pio, PioPin};
@@ -29,6 +30,10 @@ use trouble_host::prelude::*;
 
 // Bounded MPMC channel with a capacity of 1 message
 static CAR_COMMAND_SIGNAL: Signal<ThreadModeRawMutex, DriveCommand> = Signal::new();
+
+// State for the CYW43439 wifi+bluetooth driver
+static STATE: StaticCell<cyw43::State> = StaticCell::new();
+
 
 bind_interrupts!(struct Irqs {
     PIO0_IRQ_0 => PioInterruptHandler<PIO0>;
@@ -77,7 +82,6 @@ async fn create_ble_controller(
         DmaChannel::new(dma_rx, Irqs),
     );
 
-    static STATE: StaticCell<cyw43::State> = StaticCell::new();
     let state = STATE.init(cyw43::State::new());
     let (_net_device, bt_device, mut control, runner) =
         cyw43::new_with_bluetooth(state, pwr, spi, fw, btfw, nvram).await;
@@ -97,7 +101,7 @@ async fn car_control_task(mut car: CarControl<'static>) {
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
-    let p = embassy_rp::init(Default::default());
+    let p = embassy_rp::init(Config::default());
 
     info!("Initializing the program");
 

@@ -21,7 +21,15 @@ impl<'a> MotorControl<'a> {
 
         let max_duty = self.speed_pin.max_duty_cycle();
 
-        let set_duty = (speed * max_duty as f32) as i32;
+        let set_duty = (speed * f32::from(max_duty)) as i32;
+
+        debug_assert!(
+            set_duty.unsigned_abs() <= max_duty as u32,
+            "duty {} exceeds max duty {}",
+            set_duty,
+            max_duty
+        );
+
         match set_duty.cmp(&0) {
             core::cmp::Ordering::Less => {
                 self.direction_pin.set_high();
