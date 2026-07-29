@@ -48,14 +48,15 @@ class BleScannerManager(private val context: Context) {
         if (adapter == null) {
             _isBluetoothEnabled.value = false
             _errorMessage.value = "Bluetooth is not supported on this device"
-        } else {
-            _isBluetoothEnabled.value = adapter.isEnabled
-            if (!adapter.isEnabled) {
-                _errorMessage.value = "Bluetooth is turned off"
-            } else {
-                _errorMessage.value = null
-            }
+            return
         }
+
+        _isBluetoothEnabled.value = adapter.isEnabled
+        if (!adapter.isEnabled) {
+            _errorMessage.value = "Bluetooth is turned off"
+            return
+        }
+        _errorMessage.value = null
     }
 
     private val scanCallback = object : ScanCallback() {
@@ -93,7 +94,7 @@ class BleScannerManager(private val context: Context) {
         val targetUuid = ParcelUuid.fromString("0000fff0-0000-1000-8000-00805f9b34fb")
 
         val matchesUuid = serviceUuids.contains(targetUuid)
-        val matchesName = name?.contains("Tricycletops", ignoreCase = true) == true
+        val matchesName = name?.contains("Tricycletops", ignoreCase = true) ?: false
         val isTricycletops = matchesUuid || matchesName
 
         val currentList = _discoveredDevices.value.toMutableList()
