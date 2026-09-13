@@ -10,8 +10,8 @@ use crate::motor_control::MotorControl;
 
 #[derive(Clone, Copy, defmt::Format)]
 pub struct DriveCommand {
-    pub left: f32,
-    pub right: f32,
+    pub left: i32,
+    pub right: i32,
 }
 
 pub struct CarControl<'a> {
@@ -51,12 +51,13 @@ impl CarControl<'_> {
         }
     }
 
-    /// Set individual speeds for left and right motors.
-    /// Inputs should be floats between -1.0 and 1.0.
-    pub fn set_speeds(&mut self, left_speed: f32, right_speed: f32) -> Result<(), PwmError> {
-        let left_speed = left_speed.clamp(-1.0, 1.0);
-        let right_speed = right_speed.clamp(-1.0, 1.0);
+    pub fn max_duties(&self) -> (u16, u16) {
+        (self.left_motor.max_duty(), self.right_motor.max_duty())
+    }
 
+    /// Set individual speeds for left and right motors.
+    /// Inputs should be integers between -max_duty and max_duty.
+    pub fn set_speeds(&mut self, left_speed: i32, right_speed: i32) -> Result<(), PwmError> {
         self.left_motor.set_speed(left_speed)?;
         self.right_motor.set_speed(right_speed)?;
 
@@ -74,7 +75,7 @@ impl CarControl<'_> {
                 left, right
             );
             if let Err(error) = self.set_speeds(left, right) {
-                let _ = self.set_speeds(0.0, 0.0);
+                let _ = self.set_speeds(0, 0);
                 return Err(error);
             }
         }

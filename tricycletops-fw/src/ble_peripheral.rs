@@ -25,6 +25,8 @@ struct Server {
 struct CarService {
     #[characteristic(uuid = "fff1", read, write, value = [0u8; 8])]
     drive_command: [u8; 8],
+    #[characteristic(uuid = "fff2", read, value = [0u8; 4])]
+    max_duty: [u8; 4],
 }
 
 /// Run the BLE stack.
@@ -32,6 +34,7 @@ pub async fn run<C>(
     controller: C,
     command_signal: &'static Signal<ThreadModeRawMutex, DriveCommand>,
     led_pin: Output<'static>,
+    max_duties: (u16, u16),
 ) where
     C: Controller,
 {
@@ -62,7 +65,7 @@ pub async fn run<C>(
             match advertise("Tricycletops", &mut peripheral, &server).await {
                 Ok(conn) => {
                     // set up tasks when the connection is established to a central, so they don't run when no one is connected.
-                    let _ = gatt_events_task(&server, &conn, command_signal).await;
+                    let _ = gatt_events_task(&server, &conn, command_signal, max_duties).await;
                 }
                 Err(e) => {
                     let e = defmt::Debug2Format(&e);
@@ -100,8 +103,15 @@ async fn gatt_events_task<P: PacketPool>(
     server: &Server<'_>,
     conn: &GattConnection<'_, '_, P>,
     command_signal: &'static Signal<ThreadModeRawMutex, DriveCommand>,
+    max_duties: (u16, u16),
 ) -> Result<(), Error> {
     let drive_command_char = server.car_service.drive_command;
+    let max_duty_char = server.car_service.max_duty;
+
+    let mut max_duty_bytes = [0u8; 4];
+    max_duty_bytes[0..2].copy_from_slice(&max_duties.0.to_le_bytes());
+    max_duty_bytes[2..4].copy_from_slice(&max_duties.1.to_le_bytes());
+    conn.set(&max_duty_char, &max_duty_bytes)?;
 
     let reason = loop {
         match conn.next().await {
@@ -172,8 +182,8 @@ fn decode_drive_command(data: &[u8]) -> Option<DriveCommand> {
     }
 
     Some(DriveCommand {
-        left: f32::from_le_bytes(data[0..4].try_into().ok()?),
-        right: f32::from_le_bytes(data[4..8].try_into().ok()?),
+        left: i32::from_le_bytes(data[0..4].try_into().ok()?),
+        right: i32::from_le_bytes(data[4..8].try_into().ok()?),
     })
 }
 

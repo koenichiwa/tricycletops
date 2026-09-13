@@ -34,7 +34,6 @@ static CAR_COMMAND_SIGNAL: Signal<ThreadModeRawMutex, DriveCommand> = Signal::ne
 // State for the CYW43439 wifi+bluetooth driver
 static STATE: StaticCell<cyw43::State> = StaticCell::new();
 
-
 bind_interrupts!(struct Irqs {
     PIO0_IRQ_0 => PioInterruptHandler<PIO0>;
     DMA_IRQ_0 => DmaInterruptHandler<DMA_CH0>, DmaInterruptHandler<DMA_CH1>;
@@ -113,6 +112,7 @@ async fn main(spawner: Spawner) {
         p.PIN_3,
         p.PIN_2,
     );
+    let max_duties = car.max_duties();
     spawner.spawn(car_control_task(car).unwrap());
 
     let mut led_pin = Output::new(p.PIN_15, Level::High);
@@ -123,5 +123,5 @@ async fn main(spawner: Spawner) {
     led_pin.toggle();
 
     info!("Running BLE peripheral...");
-    ble_peripheral::run(ble_controller, &CAR_COMMAND_SIGNAL, led_pin).await;
+    ble_peripheral::run(ble_controller, &CAR_COMMAND_SIGNAL, led_pin, max_duties).await;
 }

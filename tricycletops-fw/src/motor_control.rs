@@ -16,12 +16,15 @@ impl<'a> MotorControl<'a> {
         }
     }
 
-    pub fn set_speed(&mut self, speed: f32) -> Result<(), PwmError> {
-        let speed = speed.clamp(-1.0, 1.0);
+    pub fn max_duty(&self) -> u16 {
+        self.speed_pin.max_duty_cycle()
+    }
 
+    pub fn set_speed(&mut self, speed: i32) -> Result<(), PwmError> {
         let max_duty = self.speed_pin.max_duty_cycle();
+        let speed = speed.clamp(-(max_duty as i32), max_duty as i32);
 
-        let set_duty = (speed * f32::from(max_duty)) as i32;
+        let set_duty = speed;
 
         debug_assert!(
             set_duty.unsigned_abs() <= max_duty as u32,
