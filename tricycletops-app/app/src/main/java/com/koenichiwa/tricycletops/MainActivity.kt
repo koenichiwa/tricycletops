@@ -74,13 +74,15 @@ import androidx.navigation.compose.rememberNavController
 import com.koenichiwa.tricycletops.ui.theme.TricycleTopsTheme
 
 class MainActivity : ComponentActivity() {
-    private lateinit var bleScannerManager: BleScannerManager
+    private lateinit var bleScanner: BleScanner
+    private lateinit var bleGattClient: BleGattClient
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        bleScannerManager = BleScannerManager(applicationContext)
+        bleScanner = BleScanner(applicationContext)
+        bleGattClient = BleGattClient(applicationContext)
 
         setContent {
             TricycleTopsTheme {
@@ -116,9 +118,9 @@ class MainActivity : ComponentActivity() {
                             },
                         ) { innerPadding ->
                             BleScannerScreen(
-                                bleScannerManager = bleScannerManager,
+                                bleScanner = bleScanner,
                                 onDeviceSelect = { device ->
-                                    bleScannerManager.connect(device)
+                                    bleGattClient.connect(device)
                                     navController.navigate("joystick")
                                 },
                                 modifier = Modifier.padding(innerPadding),
@@ -127,9 +129,9 @@ class MainActivity : ComponentActivity() {
                     }
                     composable("joystick") {
                         JoystickScreen(
-                            bleScannerManager = bleScannerManager,
+                            bleGattClient = bleGattClient,
                             onDisconnect = {
-                                bleScannerManager.disconnect()
+                                bleGattClient.disconnect()
                                 navController.popBackStack()
                             },
                         )
@@ -141,28 +143,28 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        bleScannerManager.checkBluetoothState()
+        bleScanner.checkBluetoothState()
     }
 
     override fun onStop() {
         super.onStop()
-        bleScannerManager.stopScanning()
+        bleScanner.stopScanning()
     }
 }
 
 @Composable
 fun BleScannerScreen(
-    bleScannerManager: BleScannerManager,
+    bleScanner: BleScanner,
     onDeviceSelect: (BleDevice) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val isScanning by bleScannerManager.isScanning.collectAsState()
-    val devices by bleScannerManager.discoveredDevices.collectAsState()
-    val isBluetoothEnabled by bleScannerManager.isBluetoothEnabled.collectAsState()
-    val errorMessage by bleScannerManager.errorMessage.collectAsState()
+    val isScanning by bleScanner.isScanning.collectAsState()
+    val devices by bleScanner.discoveredDevices.collectAsState()
+    val isBluetoothEnabled by bleScanner.isBluetoothEnabled.collectAsState()
+    val errorMessage by bleScanner.errorMessage.collectAsState()
 
-    var hasPermissionsState by remember { mutableStateOf(bleScannerManager.hasPermissions()) }
+    var hasPermissionsState by remember { mutableStateOf(context.hasBlePermissions()) }
 
     // Launcher for requesting runtime Bluetooth permissions
     val permissionLauncher =
@@ -172,13 +174,13 @@ fun BleScannerScreen(
             val allGranted = permissions.values.all { it }
             hasPermissionsState = allGranted
             if (allGranted) {
-                bleScannerManager.checkBluetoothState()
-                bleScannerManager.startScanning()
+                bleScanner.checkBluetoothState()
+                bleScanner.startScanning()
             }
         }
 
     LaunchedEffect(Unit) {
-        bleScannerManager.checkBluetoothState()
+        bleScanner.checkBluetoothState()
     }
 
     Column(
@@ -302,11 +304,11 @@ fun BleScannerScreen(
                             ),
                         )
                     } else {
-                        bleScannerManager.checkBluetoothState()
+                        bleScanner.checkBluetoothState()
                         if (isScanning) {
-                            bleScannerManager.stopScanning()
+                            bleScanner.stopScanning()
                         } else {
-                            bleScannerManager.startScanning()
+                            bleScanner.startScanning()
                         }
                     }
                 },
@@ -334,7 +336,7 @@ fun BleScannerScreen(
             }
 
             OutlinedButton(
-                onClick = { bleScannerManager.clearDevices() },
+                onClick = { bleScanner.clearDevices() },
                 enabled = devices.isNotEmpty() && !isScanning,
             ) {
                 Text("Clear")
@@ -426,22 +428,12 @@ fun DeviceItemCard(
                 .clickable { onClick() },
         colors =
             CardDefaults.cardColors(
-                containerColor =
-                    if (device.isTricycletops) {
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                    } else {
-                        MaterialTheme.colorScheme.surface
-                    },
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
             ),
         border =
             BorderStroke(
-                width = if (device.isTricycletops) 2.dp else 1.dp,
-                color =
-                    if (device.isTricycletops) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.outlineVariant
-                    },
+                width = 2.dp,
+                color = MaterialTheme.colorScheme.primary,
             ),
         shape = RoundedCornerShape(12.dp),
     ) {
@@ -462,26 +454,19 @@ fun DeviceItemCard(
                         text = device.name ?: "Unknown Device",
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.bodyLarge,
-                        color =
-                            if (device.isTricycletops) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            },
+                        color = MaterialTheme.colorScheme.primary,
                     )
 
-                    if (device.isTricycletops) {
-                        SuggestionChip(
-                            onClick = {},
-                            label = { Text("TricycleTops Vehicle", fontSize = 10.sp) },
-                            colors =
-                                SuggestionChipDefaults.suggestionChipColors(
-                                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                    labelColor = MaterialTheme.colorScheme.primary,
-                                ),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
-                        )
-                    }
+                    SuggestionChip(
+                        onClick = {},
+                        label = { Text("TricycleTops Vehicle", fontSize = 10.sp) },
+                        colors =
+                            SuggestionChipDefaults.suggestionChipColors(
+                                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                labelColor = MaterialTheme.colorScheme.primary,
+                            ),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -522,7 +507,6 @@ fun DeviceItemCard(
     }
 }
 
-@Suppress("ktlint:compose:modifier-missing-check")
 @Composable
 fun ScanPulseAnimation() {
     val transition = rememberInfiniteTransition(label = "pulse")

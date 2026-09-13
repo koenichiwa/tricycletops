@@ -57,14 +57,14 @@ import kotlin.math.sqrt
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JoystickScreen(
-    bleScannerManager: BleScannerManager,
+    bleGattClient: BleGattClient,
     onDisconnect: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val connectionState by bleScannerManager.connectionState.collectAsState()
-    val connectedDevice by bleScannerManager.connectedDevice.collectAsState()
-    val leftMaxDuty by bleScannerManager.leftMaxDuty.collectAsState()
-    val rightMaxDuty by bleScannerManager.rightMaxDuty.collectAsState()
+    val connectionState by bleGattClient.connectionState.collectAsState()
+    val connectedDevice by bleGattClient.connectedDevice.collectAsState()
+    val leftMaxDuty by bleGattClient.leftMaxDuty.collectAsState()
+    val rightMaxDuty by bleGattClient.rightMaxDuty.collectAsState()
 
     val leftMaxDutyVal = leftMaxDuty ?: 1000 // Fallback if BLE hasn't read it yet
     val rightMaxDutyVal = rightMaxDuty ?: 1000 // Fallback if BLE hasn't read it yet
@@ -94,7 +94,7 @@ fun JoystickScreen(
 
     // Call the command when motor speeds change
     LaunchedEffect(leftMotorInt, rightMotorInt) {
-        bleScannerManager.sendDriveCommand(leftMotorInt, rightMotorInt)
+        bleGattClient.sendDriveCommand(leftMotorInt, rightMotorInt)
     }
 
     Scaffold(
