@@ -16,13 +16,14 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Handler
 import android.os.Looper
-import android.os.ParcelUuid
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+
+private const val SCAN_PERIOD: Long = 10000 // Scan for 10 seconds
 
 enum class ConnectionState {
     Disconnected,
@@ -59,7 +60,6 @@ class BleScannerManager(
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
     private val handler = Handler(Looper.getMainLooper())
-    private val SCAN_PERIOD: Long = 10000 // Scan for 10 seconds
 
     init {
         checkBluetoothState()
