@@ -34,7 +34,7 @@ import kotlin.math.sqrt
 fun JoystickScreen(
     bleScannerManager: BleScannerManager,
     onDisconnect: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val connectionState by bleScannerManager.connectionState.collectAsState()
     val connectedDevice by bleScannerManager.connectedDevice.collectAsState()
@@ -44,12 +44,14 @@ fun JoystickScreen(
 
     // Map joystick coordinates to differential drive speeds
     // Y is forward/backward, X is turning left/right
-    val leftMotorSpeed = remember(joystickX, joystickY) {
-        (joystickY + joystickX).coerceIn(-1f, 1f)
-    }
-    val rightMotorSpeed = remember(joystickX, joystickY) {
-        (joystickY - joystickX).coerceIn(-1f, 1f)
-    }
+    val leftMotorSpeed =
+        remember(joystickX, joystickY) {
+            (joystickY + joystickX).coerceIn(-1f, 1f)
+        }
+    val rightMotorSpeed =
+        remember(joystickX, joystickY) {
+            (joystickY - joystickX).coerceIn(-1f, 1f)
+        }
 
     // Call the stub command when motor speeds change
     LaunchedEffect(leftMotorSpeed, rightMotorSpeed) {
@@ -63,14 +65,14 @@ fun JoystickScreen(
                 title = {
                     Text(
                         text = connectedDevice?.name ?: "Tricycletops Control",
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onDisconnect) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back to Scanner"
+                            contentDescription = "Back to Scanner",
                         )
                     }
                 },
@@ -79,59 +81,64 @@ fun JoystickScreen(
                         Icon(
                             imageVector = Icons.Default.PowerSettingsNew,
                             contentDescription = "Disconnect",
-                            tint = MaterialTheme.colorScheme.error
+                            tint = MaterialTheme.colorScheme.error,
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                )
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                    ),
             )
-        }
+        },
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(24.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceEvenly
+            verticalArrangement = Arrangement.SpaceEvenly,
         ) {
             // Status Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = when (connectionState) {
-                        ConnectionState.Connected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
-                        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                    }
-                ),
-                shape = RoundedCornerShape(16.dp)
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor =
+                            when (connectionState) {
+                                ConnectionState.Connected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
+                                else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                            },
+                    ),
+                shape = RoundedCornerShape(16.dp),
             ) {
                 Row(
                     modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
                         imageVector = Icons.Default.BluetoothConnected,
                         contentDescription = "Connection Status",
-                        tint = when (connectionState) {
-                            ConnectionState.Connected -> MaterialTheme.colorScheme.primary
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        modifier = Modifier.size(32.dp)
+                        tint =
+                            when (connectionState) {
+                                ConnectionState.Connected -> MaterialTheme.colorScheme.primary
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                        modifier = Modifier.size(32.dp),
                     )
                     Spacer(modifier = Modifier.width(16.dp))
                     Column {
                         Text(
                             text = "Status: ${connectionState.name}",
                             fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.bodyLarge
+                            style = MaterialTheme.typography.bodyLarge,
                         )
                         Text(
                             text = connectedDevice?.address ?: "No device connected",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -140,66 +147,89 @@ fun JoystickScreen(
             // Central Joystick Area
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Center,
             ) {
                 Text(
                     text = "Steer Vehicle",
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 8.dp),
                 )
                 Text(
                     text = "Drag the circle to steer. Releasing will stop the car.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 24.dp)
+                    modifier = Modifier.padding(bottom = 24.dp),
                 )
 
                 Joystick(
                     onJoystickChange = { x, y ->
                         joystickX = x
                         joystickY = y
-                    }
+                    },
                 )
             }
 
             // Motor Speed Telemetry Display
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
-                ),
-                shape = RoundedCornerShape(12.dp)
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                    ),
+                shape = RoundedCornerShape(12.dp),
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "Telemetry / Outputs (Drive Command)",
                         fontWeight = FontWeight.SemiBold,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Column {
-                            Text(text = "Left Motor", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                text = "Left Motor",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                             Text(
                                 text = String.format("%.2f", leftMotorSpeed),
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = if (leftMotorSpeed != 0f) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                color =
+                                    if (leftMotorSpeed !=
+                                        0f
+                                    ) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    },
                             )
                         }
                         Column(horizontalAlignment = Alignment.End) {
-                            Text(text = "Right Motor", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                text = "Right Motor",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                             Text(
                                 text = String.format("%.2f", rightMotorSpeed),
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = if (rightMotorSpeed != 0f) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                color =
+                                    if (rightMotorSpeed !=
+                                        0f
+                                    ) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    },
                             )
                         }
                     }
@@ -214,82 +244,82 @@ fun Joystick(
     modifier: Modifier = Modifier,
     sizeDp: Int = 220,
     knobSizeDp: Int = 70,
-    onJoystickChange: (x: Float, y: Float) -> Unit
+    onJoystickChange: (x: Float, y: Float) -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
     val joystickOffset = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
 
     Box(
-        modifier = modifier
-            .size(sizeDp.dp)
-            .background(
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                shape = CircleShape
-            )
-            .border(
-                width = 2.dp,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                shape = CircleShape
-            ),
-        contentAlignment = Alignment.Center
+        modifier =
+            modifier
+                .size(sizeDp.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    shape = CircleShape,
+                ).border(
+                    width = 2.dp,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                    shape = CircleShape,
+                ),
+        contentAlignment = Alignment.Center,
     ) {
         val sizePx = with(androidx.compose.ui.platform.LocalDensity.current) { sizeDp.dp.toPx() }
         val knobSizePx = with(androidx.compose.ui.platform.LocalDensity.current) { knobSizeDp.dp.toPx() }
         val maxRadius = (sizePx - knobSizePx) / 2f
 
         Box(
-            modifier = Modifier
-                .offset {
-                    IntOffset(
-                        joystickOffset.value.x.toInt(),
-                        joystickOffset.value.y.toInt()
-                    )
-                }
-                .size(knobSizeDp.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = CircleShape
-                )
-                .pointerInput(Unit) {
-                    detectDragGestures(
-                        onDragStart = { },
-                        onDragEnd = {
-                            coroutineScope.launch {
-                                joystickOffset.animateTo(Offset.Zero)
-                                onJoystickChange(0f, 0f)
-                            }
-                        },
-                        onDragCancel = {
-                            coroutineScope.launch {
-                                joystickOffset.animateTo(Offset.Zero)
-                                onJoystickChange(0f, 0f)
-                            }
-                        },
-                        onDrag = { change, dragAmount ->
-                            change.consume()
-                            val combinedOffset = joystickOffset.value + dragAmount
-                            val distance = sqrt(combinedOffset.x * combinedOffset.x + combinedOffset.y * combinedOffset.y)
+            modifier =
+                Modifier
+                    .offset {
+                        IntOffset(
+                            joystickOffset.value.x.toInt(),
+                            joystickOffset.value.y.toInt(),
+                        )
+                    }.size(knobSizeDp.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = CircleShape,
+                    ).pointerInput(Unit) {
+                        detectDragGestures(
+                            onDragStart = { },
+                            onDragEnd = {
+                                coroutineScope.launch {
+                                    joystickOffset.animateTo(Offset.Zero)
+                                    onJoystickChange(0f, 0f)
+                                }
+                            },
+                            onDragCancel = {
+                                coroutineScope.launch {
+                                    joystickOffset.animateTo(Offset.Zero)
+                                    onJoystickChange(0f, 0f)
+                                }
+                            },
+                            onDrag = { change, dragAmount ->
+                                change.consume()
+                                val combinedOffset = joystickOffset.value + dragAmount
+                                val distance = sqrt(combinedOffset.x * combinedOffset.x + combinedOffset.y * combinedOffset.y)
 
-                            val finalOffset = if (distance <= maxRadius) {
-                                combinedOffset
-                            } else {
-                                val angle = atan2(combinedOffset.y, combinedOffset.x)
-                                Offset(
-                                    x = cos(angle) * maxRadius,
-                                    y = sin(angle) * maxRadius
-                                )
-                            }
+                                val finalOffset =
+                                    if (distance <= maxRadius) {
+                                        combinedOffset
+                                    } else {
+                                        val angle = atan2(combinedOffset.y, combinedOffset.x)
+                                        Offset(
+                                            x = cos(angle) * maxRadius,
+                                            y = sin(angle) * maxRadius,
+                                        )
+                                    }
 
-                            coroutineScope.launch {
-                                joystickOffset.snapTo(finalOffset)
-                            }
+                                coroutineScope.launch {
+                                    joystickOffset.snapTo(finalOffset)
+                                }
 
-                            val relativeX = if (maxRadius > 0) finalOffset.x / maxRadius else 0f
-                            val relativeY = if (maxRadius > 0) -finalOffset.y / maxRadius else 0f // Invert Y axis
-                            onJoystickChange(relativeX, relativeY)
-                        }
-                    )
-                }
+                                val relativeX = if (maxRadius > 0) finalOffset.x / maxRadius else 0f
+                                val relativeY = if (maxRadius > 0) -finalOffset.y / maxRadius else 0f // Invert Y axis
+                                onJoystickChange(relativeX, relativeY)
+                            },
+                        )
+                    },
         )
     }
 }
