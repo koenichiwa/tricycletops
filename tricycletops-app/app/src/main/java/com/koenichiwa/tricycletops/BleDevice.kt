@@ -8,5 +8,5 @@ data class BleDevice(
     val rssi: Int,
     val isTricycletops: Boolean,
     val lastSeen: Long = System.currentTimeMillis(),
-    val rawDevice: BluetoothDevice
+    val rawDevice: BluetoothDevice,
 )

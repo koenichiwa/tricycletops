@@ -3,15 +3,15 @@ package com.koenichiwa.tricycletops
 import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCallback
+import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
-import android.bluetooth.BluetoothGatt
-import android.bluetooth.BluetoothGattCallback
-import android.bluetooth.BluetoothGattCharacteristic
-import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Handler
@@ -28,12 +28,13 @@ enum class ConnectionState {
     Disconnected,
     Connecting,
     Connected,
-    Disconnecting
+    Disconnecting,
 }
 
 @SuppressLint("MissingPermission")
-class BleScannerManager(private val context: Context) {
-
+class BleScannerManager(
+    private val context: Context,
+) {
     private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
     private val bluetoothAdapter: BluetoothAdapter? = bluetoothManager?.adapter
 
@@ -80,29 +81,34 @@ class BleScannerManager(private val context: Context) {
         _errorMessage.value = null
     }
 
-    private val scanCallback = object : ScanCallback() {
-        override fun onScanResult(callbackType: Int, result: ScanResult) {
-            addScanResult(result)
-        }
-
-        override fun onBatchScanResults(results: MutableList<ScanResult>) {
-            for (result in results) {
+    private val scanCallback =
+        object : ScanCallback() {
+            override fun onScanResult(
+                callbackType: Int,
+                result: ScanResult,
+            ) {
                 addScanResult(result)
             }
-        }
 
-        override fun onScanFailed(errorCode: Int) {
-            val message = when (errorCode) {
-                SCAN_FAILED_ALREADY_STARTED -> "Scan already started"
-                SCAN_FAILED_APPLICATION_REGISTRATION_FAILED -> "Application registration failed"
-                SCAN_FAILED_INTERNAL_ERROR -> "Internal Bluetooth error"
-                SCAN_FAILED_FEATURE_UNSUPPORTED -> "BLE Scan feature unsupported"
-                else -> "Scan failed with error code $errorCode"
+            override fun onBatchScanResults(results: MutableList<ScanResult>) {
+                for (result in results) {
+                    addScanResult(result)
+                }
             }
-            _errorMessage.value = message
-            _isScanning.value = false
+
+            override fun onScanFailed(errorCode: Int) {
+                val message =
+                    when (errorCode) {
+                        SCAN_FAILED_ALREADY_STARTED -> "Scan already started"
+                        SCAN_FAILED_APPLICATION_REGISTRATION_FAILED -> "Application registration failed"
+                        SCAN_FAILED_INTERNAL_ERROR -> "Internal Bluetooth error"
+                        SCAN_FAILED_FEATURE_UNSUPPORTED -> "BLE Scan feature unsupported"
+                        else -> "Scan failed with error code $errorCode"
+                    }
+                _errorMessage.value = message
+                _isScanning.value = false
+            }
         }
-    }
 
     private fun addScanResult(result: ScanResult) {
         val device = result.device
@@ -122,13 +128,14 @@ class BleScannerManager(private val context: Context) {
         val currentList = _discoveredDevices.value.toMutableList()
         val existingIndex = currentList.indexOfFirst { it.address == address }
 
-        val bleDevice = BleDevice(
-            address = address,
-            name = name,
-            rssi = rssi,
-            isTricycletops = isTricycletops,
-            rawDevice = device
-        )
+        val bleDevice =
+            BleDevice(
+                address = address,
+                name = name,
+                rssi = rssi,
+                isTricycletops = isTricycletops,
+                rawDevice = device,
+            )
 
         if (existingIndex >= 0) {
             currentList[existingIndex] = bleDevice
@@ -137,10 +144,11 @@ class BleScannerManager(private val context: Context) {
         }
 
         // Sort: Tricycletops first, then by RSSI (strongest signal first)
-        _discoveredDevices.value = currentList.sortedWith(
-            compareByDescending<BleDevice> { it.isTricycletops }
-                .thenByDescending { it.rssi }
-        )
+        _discoveredDevices.value =
+            currentList.sortedWith(
+                compareByDescending<BleDevice> { it.isTricycletops }
+                    .thenByDescending { it.rssi },
+            )
     }
 
     fun startScanning() {
@@ -168,9 +176,11 @@ class BleScannerManager(private val context: Context) {
         _discoveredDevices.value = emptyList()
 
         val filters = mutableListOf<ScanFilter>()
-        val settings = ScanSettings.Builder()
-            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-            .build()
+        val settings =
+            ScanSettings
+                .Builder()
+                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                .build()
 
         handler.postDelayed({
             if (_isScanning.value) {
@@ -206,60 +216,71 @@ class BleScannerManager(private val context: Context) {
     }
 
     fun hasPermissions(): Boolean {
-        val scanGranted = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.BLUETOOTH_SCAN
-        ) == PackageManager.PERMISSION_GRANTED
+        val scanGranted =
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.BLUETOOTH_SCAN,
+            ) == PackageManager.PERMISSION_GRANTED
 
-        val connectGranted = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.BLUETOOTH_CONNECT
-        ) == PackageManager.PERMISSION_GRANTED
+        val connectGranted =
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.BLUETOOTH_CONNECT,
+            ) == PackageManager.PERMISSION_GRANTED
 
         return scanGranted && connectGranted
     }
 
-    private val gattCallback = object : BluetoothGattCallback() {
-        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
-            if (status != BluetoothGatt.GATT_SUCCESS) {
-                _connectionState.value = ConnectionState.Disconnected
-                _connectedDevice.value = null
-                _errorMessage.value = "GATT connection failed (status: $status)"
-                gatt.close()
-                bluetoothGatt = null
-                return
-            }
-
-            when (newState) {
-                BluetoothProfile.STATE_CONNECTED -> {
-                    _connectionState.value = ConnectionState.Connected
-                    gatt.discoverServices()
-                }
-                BluetoothProfile.STATE_DISCONNECTED -> {
+    private val gattCallback =
+        object : BluetoothGattCallback() {
+            override fun onConnectionStateChange(
+                gatt: BluetoothGatt,
+                status: Int,
+                newState: Int,
+            ) {
+                if (status != BluetoothGatt.GATT_SUCCESS) {
                     _connectionState.value = ConnectionState.Disconnected
                     _connectedDevice.value = null
+                    _errorMessage.value = "GATT connection failed (status: $status)"
                     gatt.close()
                     bluetoothGatt = null
+                    return
+                }
+
+                when (newState) {
+                    BluetoothProfile.STATE_CONNECTED -> {
+                        _connectionState.value = ConnectionState.Connected
+                        gatt.discoverServices()
+                    }
+
+                    BluetoothProfile.STATE_DISCONNECTED -> {
+                        _connectionState.value = ConnectionState.Disconnected
+                        _connectedDevice.value = null
+                        gatt.close()
+                        bluetoothGatt = null
+                    }
                 }
             }
-        }
 
-        override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                val service = gatt.getService(java.util.UUID.fromString("0000fff0-0000-1000-8000-00805f9b34fb"))
-                if (service != null) {
-                    val characteristic = service.getCharacteristic(java.util.UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb"))
-                    if (characteristic == null) {
-                        _errorMessage.value = "Tricycletops drive characteristic not found"
+            override fun onServicesDiscovered(
+                gatt: BluetoothGatt,
+                status: Int,
+            ) {
+                if (status == BluetoothGatt.GATT_SUCCESS) {
+                    val service = gatt.getService(java.util.UUID.fromString("0000fff0-0000-1000-8000-00805f9b34fb"))
+                    if (service != null) {
+                        val characteristic = service.getCharacteristic(java.util.UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb"))
+                        if (characteristic == null) {
+                            _errorMessage.value = "Tricycletops drive characteristic not found"
+                        }
+                    } else {
+                        _errorMessage.value = "Tricycletops service not found"
                     }
                 } else {
-                    _errorMessage.value = "Tricycletops service not found"
+                    _errorMessage.value = "Failed to discover GATT services: $status"
                 }
-            } else {
-                _errorMessage.value = "Failed to discover GATT services: $status"
             }
         }
-    }
 
     fun connect(device: BleDevice) {
         if (!hasPermissions()) {
@@ -288,7 +309,10 @@ class BleScannerManager(private val context: Context) {
         bluetoothGatt?.disconnect()
     }
 
-    fun sendDriveCommand(left: Float, right: Float) {
+    fun sendDriveCommand(
+        left: Float,
+        right: Float,
+    ) {
         if (!hasPermissions() || connectionState.value != ConnectionState.Connected) {
             return
         }
@@ -310,7 +334,7 @@ class BleScannerManager(private val context: Context) {
                 gatt.writeCharacteristic(
                     characteristic,
                     payload,
-                    BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                    BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT,
                 )
             } catch (e: Exception) {
                 android.util.Log.e("BleScannerManager", "Failed to write characteristic: ${e.localizedMessage}")
