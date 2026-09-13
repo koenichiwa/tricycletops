@@ -47,6 +47,12 @@ class BleScannerManager(
     private val _connectedDevice = MutableStateFlow<BleDevice?>(null)
     val connectedDevice: StateFlow<BleDevice?> = _connectedDevice.asStateFlow()
 
+    private val _leftMaxDuty = MutableStateFlow<Int?>(null)
+    val leftMaxDuty: StateFlow<Int?> = _leftMaxDuty.asStateFlow()
+
+    private val _rightMaxDuty = MutableStateFlow<Int?>(null)
+    val rightMaxDuty: StateFlow<Int?> = _rightMaxDuty.asStateFlow()
+
     private val _isScanning = MutableStateFlow(false)
     val isScanning: StateFlow<Boolean> = _isScanning.asStateFlow()
 
@@ -241,6 +247,8 @@ class BleScannerManager(
                 if (status != BluetoothGatt.GATT_SUCCESS) {
                     _connectionState.value = ConnectionState.Disconnected
                     _connectedDevice.value = null
+                    _leftMaxDuty.value = null
+                    _rightMaxDuty.value = null
                     _errorMessage.value = "GATT connection failed (status: $status)"
                     gatt.close()
                     bluetoothGatt = null
@@ -250,12 +258,16 @@ class BleScannerManager(
                 when (newState) {
                     BluetoothProfile.STATE_CONNECTED -> {
                         _connectionState.value = ConnectionState.Connected
+                        _leftMaxDuty.value = null
+                        _rightMaxDuty.value = null
                         gatt.discoverServices()
                     }
 
                     BluetoothProfile.STATE_DISCONNECTED -> {
                         _connectionState.value = ConnectionState.Disconnected
                         _connectedDevice.value = null
+                        _leftMaxDuty.value = null
+                        _rightMaxDuty.value = null
                         gatt.close()
                         bluetoothGatt = null
                     }
@@ -269,15 +281,60 @@ class BleScannerManager(
                 if (status == BluetoothGatt.GATT_SUCCESS) {
                     val service = gatt.getService(java.util.UUID.fromString("0000fff0-0000-1000-8000-00805f9b34fb"))
                     if (service != null) {
-                        val characteristic = service.getCharacteristic(java.util.UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb"))
-                        if (characteristic == null) {
+                        val driveCharacteristic = service.getCharacteristic(java.util.UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb"))
+                        if (driveCharacteristic == null) {
                             _errorMessage.value = "Tricycletops drive characteristic not found"
+                        }
+
+                        val maxDutyCharacteristic = service.getCharacteristic(java.util.UUID.fromString("0000fff2-0000-1000-8000-00805f9b34fb"))
+                        if (maxDutyCharacteristic != null) {
+                            gatt.readCharacteristic(maxDutyCharacteristic)
+                        } else {
+                            android.util.Log.e("BleScannerManager", "Tricycletops max_duty characteristic not found")
                         }
                     } else {
                         _errorMessage.value = "Tricycletops service not found"
                     }
                 } else {
                     _errorMessage.value = "Failed to discover GATT services: $status"
+                }
+            }
+
+            @Deprecated("Deprecated in Java")
+            override fun onCharacteristicRead(
+                gatt: BluetoothGatt,
+                characteristic: BluetoothGattCharacteristic,
+                status: Int,
+            ) {
+                if (status == BluetoothGatt.GATT_SUCCESS) {
+                    onCharacteristicReadInternal(characteristic, characteristic.value)
+                }
+            }
+
+            override fun onCharacteristicRead(
+                gatt: BluetoothGatt,
+                characteristic: BluetoothGattCharacteristic,
+                value: ByteArray,
+                status: Int,
+            ) {
+                if (status == BluetoothGatt.GATT_SUCCESS) {
+                    onCharacteristicReadInternal(characteristic, value)
+                }
+            }
+
+            private fun onCharacteristicReadInternal(
+                characteristic: BluetoothGattCharacteristic,
+                value: ByteArray,
+            ) {
+                if (characteristic.uuid == java.util.UUID.fromString("0000fff2-0000-1000-8000-00805f9b34fb")) {
+                    if (value.size >= 4) {
+                        val buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN)
+                        val leftMax = buffer.getShort().toInt() and 0xFFFF
+                        val rightMax = buffer.getShort().toInt() and 0xFFFF
+                        _leftMaxDuty.value = leftMax
+                        _rightMaxDuty.value = rightMax
+                        android.util.Log.i("BleScannerManager", "Discovered max duties - Left: $leftMax, Right: $rightMax")
+                    }
                 }
             }
         }
@@ -310,8 +367,8 @@ class BleScannerManager(
     }
 
     fun sendDriveCommand(
-        left: Float,
-        right: Float,
+        left: Int,
+        right: Int,
     ) {
         if (!hasPermissions() || connectionState.value != ConnectionState.Connected) {
             return
@@ -326,8 +383,8 @@ class BleScannerManager(
 
         if (characteristic != null) {
             val buffer = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN)
-            buffer.putFloat(left)
-            buffer.putFloat(right)
+            buffer.putInt(left)
+            buffer.putInt(right)
             val payload = buffer.array()
 
             try {

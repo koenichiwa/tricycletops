@@ -63,6 +63,11 @@ fun JoystickScreen(
 ) {
     val connectionState by bleScannerManager.connectionState.collectAsState()
     val connectedDevice by bleScannerManager.connectedDevice.collectAsState()
+    val leftMaxDuty by bleScannerManager.leftMaxDuty.collectAsState()
+    val rightMaxDuty by bleScannerManager.rightMaxDuty.collectAsState()
+
+    val leftMaxDutyVal = leftMaxDuty ?: 1000 // Fallback if BLE hasn't read it yet
+    val rightMaxDutyVal = rightMaxDuty ?: 1000 // Fallback if BLE hasn't read it yet
 
     var joystickX by remember { mutableFloatStateOf(0f) }
     var joystickY by remember { mutableFloatStateOf(0f) }
@@ -78,9 +83,18 @@ fun JoystickScreen(
             (joystickY - joystickX).coerceIn(-1f, 1f)
         }
 
-    // Call the stub command when motor speeds change
-    LaunchedEffect(leftMotorSpeed, rightMotorSpeed) {
-        bleScannerManager.sendDriveCommand(leftMotorSpeed, rightMotorSpeed)
+    val leftMotorInt =
+        remember(leftMotorSpeed, leftMaxDutyVal) {
+            (leftMotorSpeed * leftMaxDutyVal).toInt().coerceIn(-leftMaxDutyVal, leftMaxDutyVal)
+        }
+    val rightMotorInt =
+        remember(rightMotorSpeed, rightMaxDutyVal) {
+            (rightMotorSpeed * rightMaxDutyVal).toInt().coerceIn(-rightMaxDutyVal, rightMaxDutyVal)
+        }
+
+    // Call the command when motor speeds change
+    LaunchedEffect(leftMotorInt, rightMotorInt) {
+        bleScannerManager.sendDriveCommand(leftMotorInt, rightMotorInt)
     }
 
     Scaffold(
@@ -165,6 +179,14 @@ fun JoystickScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        if (leftMaxDuty != null && rightMaxDuty != null) {
+                            Text(
+                                text = "Max Duty - L: $leftMaxDuty, R: $rightMaxDuty",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
                     }
                 }
             }
@@ -224,13 +246,11 @@ fun JoystickScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Text(
-                                text = String.format("%.2f", leftMotorSpeed),
+                                text = String.format(java.util.Locale.US, "%.2f (%d)", leftMotorSpeed, leftMotorInt),
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.bodyLarge,
                                 color =
-                                    if (leftMotorSpeed !=
-                                        0f
-                                    ) {
+                                    if (leftMotorInt != 0) {
                                         MaterialTheme.colorScheme.primary
                                     } else {
                                         MaterialTheme.colorScheme.onSurface
@@ -244,13 +264,11 @@ fun JoystickScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Text(
-                                text = String.format("%.2f", rightMotorSpeed),
+                                text = String.format(java.util.Locale.US, "%.2f (%d)", rightMotorSpeed, rightMotorInt),
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.bodyLarge,
                                 color =
-                                    if (rightMotorSpeed !=
-                                        0f
-                                    ) {
+                                    if (rightMotorInt != 0) {
                                         MaterialTheme.colorScheme.primary
                                     } else {
                                         MaterialTheme.colorScheme.onSurface
