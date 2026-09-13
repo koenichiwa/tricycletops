@@ -10,6 +10,7 @@ import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
+import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.content.pm.PackageManager
@@ -20,6 +21,8 @@ import androidx.core.content.ContextCompat
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 enum class ConnectionState {
     Disconnected,
@@ -286,8 +289,32 @@ class BleScannerManager(private val context: Context) {
     }
 
     fun sendDriveCommand(left: Float, right: Float) {
-        // Stub: In the future, this will serialize floats into an 8-byte payload
-        // and write to the GATT characteristic (fff1) of the fff0 service.
-        android.util.Log.d("BleScannerManager", "STUB: sendDriveCommand(left = $left, right = $right)")
+        if (!hasPermissions() || connectionState.value != ConnectionState.Connected) {
+            return
+        }
+
+        val gatt = bluetoothGatt ?: return
+        val serviceUuid = java.util.UUID.fromString("0000fff0-0000-1000-8000-00805f9b34fb")
+        val charUuid = java.util.UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb")
+
+        val service = gatt.getService(serviceUuid)
+        val characteristic = service?.getCharacteristic(charUuid)
+
+        if (characteristic != null) {
+            val buffer = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN)
+            buffer.putFloat(left)
+            buffer.putFloat(right)
+            val payload = buffer.array()
+
+            try {
+                gatt.writeCharacteristic(
+                    characteristic,
+                    payload,
+                    BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("BleScannerManager", "Failed to write characteristic: ${e.localizedMessage}")
+            }
+        }
     }
 }
