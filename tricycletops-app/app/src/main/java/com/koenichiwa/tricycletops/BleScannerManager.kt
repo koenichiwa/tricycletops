@@ -8,6 +8,9 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCallback
+import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Handler
@@ -18,11 +21,26 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+enum class ConnectionState {
+    Disconnected,
+    Connecting,
+    Connected,
+    Disconnecting
+}
+
 @SuppressLint("MissingPermission")
 class BleScannerManager(private val context: Context) {
 
     private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
     private val bluetoothAdapter: BluetoothAdapter? = bluetoothManager?.adapter
+
+    private var bluetoothGatt: BluetoothGatt? = null
+
+    private val _connectionState = MutableStateFlow(ConnectionState.Disconnected)
+    val connectionState: StateFlow<ConnectionState> = _connectionState.asStateFlow()
+
+    private val _connectedDevice = MutableStateFlow<BleDevice?>(null)
+    val connectedDevice: StateFlow<BleDevice?> = _connectedDevice.asStateFlow()
 
     private val _isScanning = MutableStateFlow(false)
     val isScanning: StateFlow<Boolean> = _isScanning.asStateFlow()
@@ -89,13 +107,14 @@ class BleScannerManager(private val context: Context) {
         val name = result.scanRecord?.deviceName ?: device.name
         val rssi = result.rssi
 
-        // Check if this is our Tricycletops peripheral
-        val serviceUuids = result.scanRecord?.serviceUuids ?: emptyList()
-        val targetUuid = ParcelUuid.fromString("0000fff0-0000-1000-8000-00805f9b34fb")
+        // Filter: only show devices with a name starting with "Tricycletops"
+        val startsWithName = name?.startsWith("Tricycletops", ignoreCase = true) ?: false
+        if (!startsWithName) {
+            return
+        }
 
-        val matchesUuid = serviceUuids.contains(targetUuid)
-        val matchesName = name?.contains("Tricycletops", ignoreCase = true) ?: false
-        val isTricycletops = matchesUuid || matchesName
+        // Check if this is our Tricycletops peripheral (we know it starts with Tricycletops, so it matches)
+        val isTricycletops = true
 
         val currentList = _discoveredDevices.value.toMutableList()
         val existingIndex = currentList.indexOfFirst { it.address == address }
@@ -195,5 +214,80 @@ class BleScannerManager(private val context: Context) {
         ) == PackageManager.PERMISSION_GRANTED
 
         return scanGranted && connectGranted
+    }
+
+    private val gattCallback = object : BluetoothGattCallback() {
+        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+            if (status != BluetoothGatt.GATT_SUCCESS) {
+                _connectionState.value = ConnectionState.Disconnected
+                _connectedDevice.value = null
+                _errorMessage.value = "GATT connection failed (status: $status)"
+                gatt.close()
+                bluetoothGatt = null
+                return
+            }
+
+            when (newState) {
+                BluetoothProfile.STATE_CONNECTED -> {
+                    _connectionState.value = ConnectionState.Connected
+                    gatt.discoverServices()
+                }
+                BluetoothProfile.STATE_DISCONNECTED -> {
+                    _connectionState.value = ConnectionState.Disconnected
+                    _connectedDevice.value = null
+                    gatt.close()
+                    bluetoothGatt = null
+                }
+            }
+        }
+
+        override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                val service = gatt.getService(java.util.UUID.fromString("0000fff0-0000-1000-8000-00805f9b34fb"))
+                if (service != null) {
+                    val characteristic = service.getCharacteristic(java.util.UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb"))
+                    if (characteristic == null) {
+                        _errorMessage.value = "Tricycletops drive characteristic not found"
+                    }
+                } else {
+                    _errorMessage.value = "Tricycletops service not found"
+                }
+            } else {
+                _errorMessage.value = "Failed to discover GATT services: $status"
+            }
+        }
+    }
+
+    fun connect(device: BleDevice) {
+        if (!hasPermissions()) {
+            _errorMessage.value = "Permissions missing for BLE connection"
+            return
+        }
+
+        stopScanning()
+
+        _connectedDevice.value = device
+        _connectionState.value = ConnectionState.Connecting
+
+        try {
+            bluetoothGatt = device.rawDevice.connectGatt(context, false, gattCallback)
+        } catch (e: Exception) {
+            _errorMessage.value = "Connection failed: ${e.localizedMessage}"
+            _connectionState.value = ConnectionState.Disconnected
+            _connectedDevice.value = null
+        }
+    }
+
+    fun disconnect() {
+        if (!hasPermissions()) return
+
+        _connectionState.value = ConnectionState.Disconnecting
+        bluetoothGatt?.disconnect()
+    }
+
+    fun sendDriveCommand(left: Float, right: Float) {
+        // Stub: In the future, this will serialize floats into an 8-byte payload
+        // and write to the GATT characteristic (fff1) of the fff0 service.
+        android.util.Log.d("BleScannerManager", "STUB: sendDriveCommand(left = $left, right = $right)")
     }
 }

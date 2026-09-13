@@ -1,3 +1,17 @@
-# Default ignored files
-/shelf/
+# JetBrains/IntelliJ standard shared project .gitignore
+# This allows sharing essential configuration (compiler, vcs, gradle, ktlint, runConfigs)
+# while ignoring user-specific/machine-specific local files.
+
+# Ignore user-specific/local settings
 /workspace.xml
+/tasks.xml
+/shelf/
+/dictionaries/
+/deploymentTargetSelector.xml
+/AndroidProjectSystem.xml
+/.name
+
+# Ignore internal build/library definitions (generated automatically by Gradle)
+/caches/
+/libraries/
+/modules.xml

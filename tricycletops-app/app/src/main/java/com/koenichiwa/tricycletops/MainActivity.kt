@@ -17,8 +17,12 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.DirectionsCar
@@ -51,36 +55,55 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             TricycleTopsTheme {
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    topBar = {
-                        @OptIn(ExperimentalMaterial3Api::class)
-                        TopAppBar(
-                            title = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        imageVector = Icons.Default.DirectionsCar,
-                                        contentDescription = "App Icon",
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.padding(end = 8.dp)
+                val navController = rememberNavController()
+
+                NavHost(navController = navController, startDestination = "scanner") {
+                    composable("scanner") {
+                        Scaffold(
+                            modifier = Modifier.fillMaxSize(),
+                            topBar = {
+                                @OptIn(ExperimentalMaterial3Api::class)
+                                TopAppBar(
+                                    title = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                imageVector = Icons.Default.DirectionsCar,
+                                                contentDescription = "App Icon",
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.padding(end = 8.dp)
+                                            )
+                                            Text(
+                                                text = "TricycleTops",
+                                                fontWeight = FontWeight.Bold,
+                                                style = MaterialTheme.typography.titleLarge
+                                            )
+                                        }
+                                    },
+                                    colors = TopAppBarDefaults.topAppBarColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                                     )
-                                    Text(
-                                        text = "TricycleTops",
-                                        fontWeight = FontWeight.Bold,
-                                        style = MaterialTheme.typography.titleLarge
-                                    )
-                                }
-                            },
-                            colors = TopAppBarDefaults.topAppBarColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                                )
+                            }
+                        ) { innerPadding ->
+                            BleScannerScreen(
+                                bleScannerManager = bleScannerManager,
+                                onDeviceSelected = { device ->
+                                    bleScannerManager.connect(device)
+                                    navController.navigate("joystick")
+                                },
+                                modifier = Modifier.padding(innerPadding)
                             )
+                        }
+                    }
+                    composable("joystick") {
+                        JoystickScreen(
+                            bleScannerManager = bleScannerManager,
+                            onDisconnect = {
+                                bleScannerManager.disconnect()
+                                navController.popBackStack()
+                            }
                         )
                     }
-                ) { innerPadding ->
-                    BleScannerScreen(
-                        bleScannerManager = bleScannerManager,
-                        modifier = Modifier.padding(innerPadding)
-                    )
                 }
             }
         }
@@ -100,6 +123,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun BleScannerScreen(
     bleScannerManager: BleScannerManager,
+    onDeviceSelected: (BleDevice) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -329,7 +353,10 @@ fun BleScannerScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(devices, key = { it.address }) { device ->
-                    DeviceItemCard(device = device)
+                    DeviceItemCard(
+                        device = device,
+                        onClick = { onDeviceSelected(device) }
+                    )
                 }
             }
         }
@@ -337,9 +364,14 @@ fun BleScannerScreen(
 }
 
 @Composable
-fun DeviceItemCard(device: BleDevice) {
+fun DeviceItemCard(
+    device: BleDevice,
+    onClick: () -> Unit
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         colors = CardDefaults.cardColors(
             containerColor = if (device.isTricycletops) {
                 MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
