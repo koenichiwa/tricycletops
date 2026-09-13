@@ -1,12 +1,12 @@
 package com.koenichiwa.tricycletops
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothProfile
 import android.content.Context
-import androidx.annotation.RequiresPermission
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -42,7 +42,7 @@ class BleGattClient(
 
     private val gattCallback =
         object : BluetoothGattCallback() {
-            @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+            @SuppressLint("MissingPermission")
             override fun onConnectionStateChange(
                 gatt: BluetoothGatt,
                 status: Int,
@@ -78,7 +78,7 @@ class BleGattClient(
                 }
             }
 
-            @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+            @SuppressLint("MissingPermission")
             override fun onServicesDiscovered(
                 gatt: BluetoothGatt,
                 status: Int,
@@ -86,12 +86,18 @@ class BleGattClient(
                 if (status == BluetoothGatt.GATT_SUCCESS) {
                     val service = gatt.getService(java.util.UUID.fromString("0000fff0-0000-1000-8000-00805f9b34fb"))
                     if (service != null) {
-                        val driveCharacteristic = service.getCharacteristic(java.util.UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb"))
+                        val driveCharacteristic =
+                            service.getCharacteristic(
+                                java.util.UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb"),
+                            )
                         if (driveCharacteristic == null) {
                             _errorMessage.value = "Tricycletops drive characteristic not found"
                         }
 
-                        val maxDutyCharacteristic = service.getCharacteristic(java.util.UUID.fromString("0000fff2-0000-1000-8000-00805f9b34fb"))
+                        val maxDutyCharacteristic =
+                            service.getCharacteristic(
+                                java.util.UUID.fromString("0000fff2-0000-1000-8000-00805f9b34fb"),
+                            )
                         if (maxDutyCharacteristic != null) {
                             gatt.readCharacteristic(maxDutyCharacteristic)
                         } else {
@@ -144,7 +150,7 @@ class BleGattClient(
             }
         }
 
-    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    @SuppressLint("MissingPermission")
     fun connect(device: BleDevice) {
         if (!context.hasBlePermissions()) {
             _errorMessage.value = "Permissions missing for BLE connection"
@@ -163,7 +169,7 @@ class BleGattClient(
         }
     }
 
-    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    @SuppressLint("MissingPermission")
     fun disconnect() {
         if (!context.hasBlePermissions()) return
 
@@ -171,7 +177,7 @@ class BleGattClient(
         bluetoothGatt?.disconnect()
     }
 
-    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    @SuppressLint("MissingPermission")
     fun sendDriveCommand(
         left: Int,
         right: Int,

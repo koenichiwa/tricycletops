@@ -1,6 +1,7 @@
 package com.koenichiwa.tricycletops
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanCallback
@@ -88,11 +89,12 @@ class BleScanner(
 
         val device = result.device
         val address = device.address
-        val name = try {
-            result.scanRecord?.deviceName ?: device.name
-        } catch (e: SecurityException) {
-            null
-        }
+        val name =
+            try {
+                result.scanRecord?.deviceName ?: device.name
+            } catch (e: SecurityException) {
+                null
+            }
         val rssi = result.rssi
 
         // Filter: only show devices with a name starting with "Tricycletops"
@@ -122,7 +124,7 @@ class BleScanner(
         _discoveredDevices.value = currentList.sortedByDescending { it.rssi }
     }
 
-    @RequiresPermission(allOf = [Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT])
+    @SuppressLint("MissingPermission")
     fun startScanning() {
         if (!context.hasBlePermissions()) {
             _errorMessage.value = "Bluetooth permissions are missing"
@@ -168,7 +170,7 @@ class BleScanner(
         }
     }
 
-    @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
+    @SuppressLint("MissingPermission")
     fun stopScanning() {
         val adapter = bluetoothAdapter
         if (adapter != null && context.isBleEnabled()) {
