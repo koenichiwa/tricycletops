@@ -73,15 +73,25 @@ fun ScannerScreen(
     val hasPermissionsState by viewModel.hasPermissions.collectAsState()
     val isBluetoothEnabled by viewModel.isBluetoothEnabled.collectAsState()
 
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.updatePermissionsState()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     // Launcher for requesting runtime Bluetooth permissions
     val permissionLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestMultiplePermissions(),
-        ) { permissions ->
-            val allGranted = permissions.values.all { it }
-            if (allGranted && isBluetoothEnabled) {
-                viewModel.updatePermissionsState()
-            }
+        ) { _ ->
+            viewModel.updatePermissionsState()
         }
 
     TricycletopsScaffold(

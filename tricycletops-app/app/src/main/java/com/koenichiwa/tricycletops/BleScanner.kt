@@ -9,6 +9,7 @@ import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import androidx.annotation.RequiresPermission
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -48,13 +49,7 @@ class BleScanner(
             }
 
             override fun onScanFailed(errorCode: Int) {
-                when (errorCode) {
-                    SCAN_FAILED_ALREADY_STARTED -> TODO()
-                    SCAN_FAILED_APPLICATION_REGISTRATION_FAILED -> TODO()
-                    SCAN_FAILED_INTERNAL_ERROR -> TODO()
-                    SCAN_FAILED_FEATURE_UNSUPPORTED -> TODO()
-                    else -> TODO()
-                }
+                Log.e("BleScanner", "BLE Scan failed with error code: $errorCode")
                 _isScanning.value = false
             }
         }
@@ -96,11 +91,11 @@ class BleScanner(
     fun startScanning() {
         if (isScanning.value) return
 
-        if (!bluetoothAdapter.isEnabled) {
+        val scanner = bluetoothLeScanner
+        if (scanner == null || !bluetoothAdapter.isEnabled) {
             _isScanning.value = false
             return
         }
-
 
         _isScanning.value = true
         _discoveredDevices.value = emptyList()
@@ -118,7 +113,7 @@ class BleScanner(
             }
         }, SCAN_PERIOD)
 
-        bluetoothLeScanner?.startScan(filters, settings, scanCallback)
+        scanner.startScan(filters, settings, scanCallback)
     }
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
@@ -126,12 +121,14 @@ class BleScanner(
         if (!isScanning.value) {
             return
         }
-        if (!bluetoothAdapter.isEnabled) {
-            _isScanning.value = false
-            return
-        }
-        bluetoothLeScanner?.stopScan(scanCallback)
         _isScanning.value = false
+        if (bluetoothAdapter.isEnabled) {
+            try {
+                bluetoothLeScanner?.stopScan(scanCallback)
+            } catch (e: Exception) {
+                Log.e("BleScanner", "Failed to stop BLE scan safely", e)
+            }
+        }
     }
 
     fun clearDevices() {

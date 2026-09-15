@@ -18,6 +18,22 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+sealed interface ScannerState {
+    data object Initializing : ScannerState
+
+    data object PermissionRequired : ScannerState
+
+    data object BluetoothDisabled : ScannerState
+
+    data object Ready : ScannerState
+
+    data object Scanning : ScannerState
+
+    data class Error(
+        val message: String,
+    ) : ScannerState
+}
+
 class ScannerViewModel(
     application: Application,
 ) : AndroidViewModel(application) {
@@ -26,7 +42,6 @@ class ScannerViewModel(
     private val bleScanner = bluetoothAdapter?.let { BleScanner(it) }
     private val _isBluetoothEnabled = MutableStateFlow(false)
     val isBluetoothEnabled: StateFlow<Boolean> = _isBluetoothEnabled.asStateFlow()
-
     private val _hasPermissions = MutableStateFlow(false)
     val hasPermissions: StateFlow<Boolean> = _hasPermissions.asStateFlow()
     val isScanning = bleScanner?.isScanning ?: MutableStateFlow(false).asStateFlow()
@@ -125,7 +140,7 @@ class ScannerViewModel(
         try {
             getApplication<Application>().unregisterReceiver(bluetoothReceiver)
         } catch (e: IllegalArgumentException) {
-            // TODO handle
+            // Ignore if receiver was not registered
         }
         try {
             bleScanner?.stopScanning()
