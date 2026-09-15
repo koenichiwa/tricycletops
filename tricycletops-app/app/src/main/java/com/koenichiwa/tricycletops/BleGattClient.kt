@@ -111,17 +111,6 @@ class BleGattClient(
                 }
             }
 
-            @Deprecated("Deprecated in Java")
-            override fun onCharacteristicRead(
-                gatt: BluetoothGatt,
-                characteristic: BluetoothGattCharacteristic,
-                status: Int,
-            ) {
-                if (status == BluetoothGatt.GATT_SUCCESS) {
-                    onCharacteristicReadInternal(characteristic, characteristic.value)
-                }
-            }
-
             override fun onCharacteristicRead(
                 gatt: BluetoothGatt,
                 characteristic: BluetoothGattCharacteristic,
