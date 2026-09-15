@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
                         ScannerScreen(
                             onDeviceSelect = { device ->
                                 bleGattClient.connect(device)
-                                navController.navigate("joystick")
+                                navController.navigate("connected")
                             },
                             bleScanner = bleScanner,
                         )
