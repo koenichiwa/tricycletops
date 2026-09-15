@@ -128,7 +128,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     composable("joystick") {
-                        JoystickScreen(
+                        ConnectedScreen(
                             bleGattClient = bleGattClient,
                             onDisconnect = {
                                 bleGattClient.disconnect()

@@ -40,7 +40,7 @@ import com.koenichiwa.tricycletops.ui.Joystick
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun JoystickScreen(
+fun ConnectedScreen(
     bleGattClient: BleGattClient,
     onDisconnect: () -> Unit,
     modifier: Modifier = Modifier,
