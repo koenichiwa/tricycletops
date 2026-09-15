@@ -22,6 +22,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -30,22 +31,44 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.koenichiwa.tricycletops.ui.Joystick
 import com.koenichiwa.tricycletops.ui.TricycletopsScaffold
 import java.util.Locale
 
 @Composable
 fun ConnectedScreen(
-    bleGattClient: BleGattClient,
+    viewModel: ConnectedViewModel,
+    deviceAddress: String,
+    deviceName: String?,
     onDisconnect: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val connectionState by bleGattClient.connectionState.collectAsState()
-    val connectedDevice by bleGattClient.connectedDevice.collectAsState()
-    val leftMaxDuty by bleGattClient.leftMaxDuty.collectAsState()
-    val rightMaxDuty by bleGattClient.rightMaxDuty.collectAsState()
+    LaunchedEffect(deviceAddress) {
+        viewModel.connectToDevice(deviceAddress, deviceName)
+    }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                viewModel.disconnect()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    val connectionState by viewModel.connectionState.collectAsState()
+    val connectedDevice by viewModel.connectedDevice.collectAsState()
+    val leftMaxDuty by viewModel.leftMaxDuty.collectAsState()
+    val rightMaxDuty by viewModel.rightMaxDuty.collectAsState()
 
     val leftMaxDutyVal = leftMaxDuty ?: 1000 // Fallback if BLE hasn't read it yet
     val rightMaxDutyVal = rightMaxDuty ?: 1000 // Fallback if BLE hasn't read it yet
@@ -55,27 +78,23 @@ fun ConnectedScreen(
 
     // Map joystick coordinates to differential drive speeds
     // Y is forward/backward, X is turning left/right
-    val leftMotorSpeed =
-        remember(joystickX, joystickY) {
-            (joystickY + joystickX).coerceIn(-1f, 1f)
-        }
-    val rightMotorSpeed =
-        remember(joystickX, joystickY) {
-            (joystickY - joystickX).coerceIn(-1f, 1f)
-        }
+    val leftMotorSpeed = remember(joystickX, joystickY) {
+        (joystickY + joystickX).coerceIn(-1f, 1f)
+    }
+    val rightMotorSpeed = remember(joystickX, joystickY) {
+        (joystickY - joystickX).coerceIn(-1f, 1f)
+    }
 
-    val leftMotorInt =
-        remember(leftMotorSpeed, leftMaxDutyVal) {
-            (leftMotorSpeed * leftMaxDutyVal).toInt().coerceIn(-leftMaxDutyVal, leftMaxDutyVal)
-        }
-    val rightMotorInt =
-        remember(rightMotorSpeed, rightMaxDutyVal) {
-            (rightMotorSpeed * rightMaxDutyVal).toInt().coerceIn(-rightMaxDutyVal, rightMaxDutyVal)
-        }
+    val leftMotorInt = remember(leftMotorSpeed, leftMaxDutyVal) {
+        (leftMotorSpeed * leftMaxDutyVal).toInt().coerceIn(-leftMaxDutyVal, leftMaxDutyVal)
+    }
+    val rightMotorInt = remember(rightMotorSpeed, rightMaxDutyVal) {
+        (rightMotorSpeed * rightMaxDutyVal).toInt().coerceIn(-rightMaxDutyVal, rightMaxDutyVal)
+    }
 
     // Call the command when motor speeds change
     LaunchedEffect(leftMotorInt, rightMotorInt) {
-        bleGattClient.sendDriveCommand(leftMotorInt, rightMotorInt)
+        viewModel.sendDriveCommand(leftMotorInt, rightMotorInt)
     }
 
     TricycletopsScaffold(
@@ -97,14 +116,13 @@ fun ConnectedScreen(
                     tint = MaterialTheme.colorScheme.error,
                 )
             }
-        },
+        }
     ) { innerPadding ->
         Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(24.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceEvenly,
         ) {
@@ -112,7 +130,7 @@ fun ConnectedScreen(
                 connectionState = connectionState,
                 deviceAddress = connectedDevice?.address,
                 leftMaxDuty = leftMaxDuty,
-                rightMaxDuty = rightMaxDuty,
+                rightMaxDuty = rightMaxDuty
             )
 
             SteeringHeader()
@@ -128,7 +146,7 @@ fun ConnectedScreen(
                 leftMotorSpeed = leftMotorSpeed,
                 leftMotorInt = leftMotorInt,
                 rightMotorSpeed = rightMotorSpeed,
-                rightMotorInt = rightMotorInt,
+                rightMotorInt = rightMotorInt
             )
         }
     }
@@ -144,14 +162,12 @@ private fun ConnectionStatusCard(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors =
-            CardDefaults.cardColors(
-                containerColor =
-                    when (connectionState) {
-                        ConnectionState.Connected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
-                        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                    },
-            ),
+        colors = CardDefaults.cardColors(
+            containerColor = when (connectionState) {
+                ConnectionState.Connected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
+                else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+            },
+        ),
         shape = RoundedCornerShape(16.dp),
     ) {
         Row(
@@ -161,11 +177,10 @@ private fun ConnectionStatusCard(
             Icon(
                 imageVector = Icons.Default.BluetoothConnected,
                 contentDescription = "Connection Status",
-                tint =
-                    when (connectionState) {
-                        ConnectionState.Connected -> MaterialTheme.colorScheme.primary
-                        else -> MaterialTheme.colorScheme.onSurfaceVariant
-                    },
+                tint = when (connectionState) {
+                    ConnectionState.Connected -> MaterialTheme.colorScheme.primary
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                },
                 modifier = Modifier.size(32.dp),
             )
             Spacer(modifier = Modifier.width(16.dp))
@@ -194,7 +209,9 @@ private fun ConnectionStatusCard(
 }
 
 @Composable
-private fun SteeringHeader(modifier: Modifier = Modifier) {
+private fun SteeringHeader(
+    modifier: Modifier = Modifier,
+) {
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -226,10 +243,9 @@ private fun TelemetryDisplayCard(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-            ),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+        ),
         shape = RoundedCornerShape(12.dp),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -248,13 +264,13 @@ private fun TelemetryDisplayCard(
                     label = "Left Motor",
                     speed = leftMotorSpeed,
                     speedInt = leftMotorInt,
-                    alignment = Alignment.Start,
+                    alignment = Alignment.Start
                 )
                 MotorSpeedColumn(
                     label = "Right Motor",
                     speed = rightMotorSpeed,
                     speedInt = rightMotorInt,
-                    alignment = Alignment.End,
+                    alignment = Alignment.End
                 )
             }
         }
@@ -271,7 +287,7 @@ private fun MotorSpeedColumn(
 ) {
     Column(
         modifier = modifier,
-        horizontalAlignment = alignment,
+        horizontalAlignment = alignment
     ) {
         Text(
             text = label,
@@ -282,12 +298,11 @@ private fun MotorSpeedColumn(
             text = String.format(Locale.US, "%.2f (%d)", speed, speedInt),
             fontWeight = FontWeight.Bold,
             style = MaterialTheme.typography.bodyLarge,
-            color =
-                if (speedInt != 0) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                },
+            color = if (speedInt != 0) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
         )
     }
 }

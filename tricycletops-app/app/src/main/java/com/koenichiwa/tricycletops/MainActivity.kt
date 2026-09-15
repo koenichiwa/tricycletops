@@ -4,21 +4,18 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.koenichiwa.tricycletops.ui.theme.TricycleTopsTheme
 
 class MainActivity : ComponentActivity() {
-    private lateinit var bleScanner: BleScanner
-    private lateinit var bleGattClient: BleGattClient
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
-        bleScanner = BleScanner(applicationContext)
-        bleGattClient = BleGattClient(applicationContext)
 
         setContent {
             TricycleTopsTheme {
@@ -26,19 +23,34 @@ class MainActivity : ComponentActivity() {
 
                 NavHost(navController = navController, startDestination = "scanner") {
                     composable("scanner") {
+                        val scannerViewModel: ScannerViewModel = viewModel()
                         ScannerScreen(
                             onDeviceSelect = { device ->
-                                bleGattClient.connect(device)
-                                navController.navigate("connected")
+                                navController.navigate("connected/${device.address}/${device.name ?: "Unknown"}")
                             },
-                            bleScanner = bleScanner,
+                            viewModel = scannerViewModel,
                         )
                     }
-                    composable("connected") {
+                    composable(
+                        route = "connected/{address}/{name}",
+                        arguments = listOf(
+                            navArgument("address") { type = NavType.StringType },
+                            navArgument("name") { type = NavType.StringType }
+                        )
+                    ) { backStackEntry ->
+                        val address = backStackEntry.arguments?.getString("address") ?: ""
+                        val name = backStackEntry.arguments?.getString("name")?.let {
+                            if (it == "Unknown") null else it
+                        }
+
+                        val connectedViewModel: ConnectedViewModel = viewModel()
+
                         ConnectedScreen(
-                            bleGattClient = bleGattClient,
+                            viewModel = connectedViewModel,
+                            deviceAddress = address,
+                            deviceName = name,
                             onDisconnect = {
-                                bleGattClient.disconnect()
+                                connectedViewModel.disconnect()
                                 navController.popBackStack()
                             },
                         )
@@ -46,16 +58,5 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        bleScanner.checkBluetoothState()
-    }
-
-    override fun onStop() {
-        super.onStop()
-        bleScanner.stopScanning()
-        bleGattClient.disconnect()
     }
 }

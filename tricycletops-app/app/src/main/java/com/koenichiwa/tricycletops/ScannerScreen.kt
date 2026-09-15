@@ -44,6 +44,7 @@ import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -55,24 +56,42 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.koenichiwa.tricycletops.ui.TricycletopsScaffold
 
 @Composable
 fun ScannerScreen(
     onDeviceSelect: (BleDevice) -> Unit,
-    bleScanner: BleScanner,
+    viewModel: ScannerViewModel,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val isScanning by bleScanner.isScanning.collectAsState()
-    val devices by bleScanner.discoveredDevices.collectAsState()
-    val errorMessage by bleScanner.errorMessage.collectAsState()
+    val isScanning by viewModel.isScanning.collectAsState()
+    val devices by viewModel.discoveredDevices.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
 
     var hasPermissionsState by remember { mutableStateOf(context.hasBlePermissions()) }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.checkBluetoothState()
+            } else if (event == Lifecycle.Event.ON_STOP) {
+                viewModel.stopScanning()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     // Launcher for requesting runtime Bluetooth permissions
     val permissionLauncher =
@@ -82,13 +101,13 @@ fun ScannerScreen(
             val allGranted = permissions.values.all { it }
             hasPermissionsState = allGranted
             if (allGranted) {
-                bleScanner.checkBluetoothState()
-                bleScanner.startScanning()
+                viewModel.checkBluetoothState()
+                viewModel.startScanning()
             }
         }
 
     LaunchedEffect(Unit) {
-        bleScanner.checkBluetoothState()
+        viewModel.checkBluetoothState()
     }
 
     TricycletopsScaffold(
@@ -121,15 +140,15 @@ fun ScannerScreen(
                             ),
                         )
                     } else {
-                        bleScanner.checkBluetoothState()
+                        viewModel.checkBluetoothState()
                         if (isScanning) {
-                            bleScanner.stopScanning()
+                            viewModel.stopScanning()
                         } else {
-                            bleScanner.startScanning()
+                            viewModel.startScanning()
                         }
                     }
                 },
-                onClearClick = { bleScanner.clearDevices() },
+                onClearClick = { viewModel.clearDevices() },
                 clearEnabled = devices.isNotEmpty() && !isScanning,
             )
 
