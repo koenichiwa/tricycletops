@@ -83,31 +83,33 @@ class BleGattClient(
                 gatt: BluetoothGatt,
                 status: Int,
             ) {
-                if (status == BluetoothGatt.GATT_SUCCESS) {
-                    val service = gatt.getService(java.util.UUID.fromString("0000fff0-0000-1000-8000-00805f9b34fb"))
-                    if (service != null) {
-                        val driveCharacteristic =
-                            service.getCharacteristic(
-                                java.util.UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb"),
-                            )
-                        if (driveCharacteristic == null) {
-                            _errorMessage.value = "Tricycletops drive characteristic not found"
-                        }
-
-                        val maxDutyCharacteristic =
-                            service.getCharacteristic(
-                                java.util.UUID.fromString("0000fff2-0000-1000-8000-00805f9b34fb"),
-                            )
-                        if (maxDutyCharacteristic != null) {
-                            gatt.readCharacteristic(maxDutyCharacteristic)
-                        } else {
-                            android.util.Log.e("BleGattClient", "Tricycletops max_duty characteristic not found")
-                        }
-                    } else {
-                        _errorMessage.value = "Tricycletops service not found"
-                    }
-                } else {
+                if (status != BluetoothGatt.GATT_SUCCESS) {
                     _errorMessage.value = "Failed to discover GATT services: $status"
+                    return
+                }
+
+                val service = gatt.getService(java.util.UUID.fromString("0000fff0-0000-1000-8000-00805f9b34fb"))
+
+                if (service == null) {
+                    _errorMessage.value = "Tricycletops service not found"
+                    return
+                }
+                val driveCharacteristic =
+                    service.getCharacteristic(
+                        java.util.UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb"),
+                    )
+                if (driveCharacteristic == null) {
+                    _errorMessage.value = "Tricycletops drive characteristic not found"
+                }
+
+                val maxDutyCharacteristic =
+                    service.getCharacteristic(
+                        java.util.UUID.fromString("0000fff2-0000-1000-8000-00805f9b34fb"),
+                    )
+                if (maxDutyCharacteristic != null) {
+                    gatt.readCharacteristic(maxDutyCharacteristic)
+                } else {
+                    android.util.Log.e("BleGattClient", "Tricycletops max_duty characteristic not found")
                 }
             }
 
