@@ -48,21 +48,17 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.koenichiwa.tricycletops.ui.TricycletopsScaffold
 
 @Composable
@@ -71,27 +67,11 @@ fun ScannerScreen(
     viewModel: ScannerViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
     val isScanning by viewModel.isScanning.collectAsState()
     val devices by viewModel.discoveredDevices.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
-
-    var hasPermissionsState by remember { mutableStateOf(context.hasBlePermissions()) }
-
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.checkBluetoothState()
-            } else if (event == Lifecycle.Event.ON_STOP) {
-                viewModel.stopScanning()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
-    }
+    val hasPermissionsState by viewModel.hasPermissions.collectAsState()
+    val isBluetoothEnabled by viewModel.isBluetoothEnabled.collectAsState()
 
     // Launcher for requesting runtime Bluetooth permissions
     val permissionLauncher =
@@ -99,26 +79,21 @@ fun ScannerScreen(
             contract = ActivityResultContracts.RequestMultiplePermissions(),
         ) { permissions ->
             val allGranted = permissions.values.all { it }
-            hasPermissionsState = allGranted
-            if (allGranted) {
-                viewModel.checkBluetoothState()
-                viewModel.startScanning()
+            if (allGranted && isBluetoothEnabled) {
+                viewModel.updatePermissionsState()
             }
         }
-
-    LaunchedEffect(Unit) {
-        viewModel.checkBluetoothState()
-    }
 
     TricycletopsScaffold(
         modifier = modifier,
         titleText = "TricycleTops",
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             ScannerIntroSection()
@@ -140,10 +115,9 @@ fun ScannerScreen(
                             ),
                         )
                     } else {
-                        viewModel.checkBluetoothState()
                         if (isScanning) {
                             viewModel.stopScanning()
-                        } else {
+                        } else if (isBluetoothEnabled) {
                             viewModel.startScanning()
                         }
                     }
@@ -158,9 +132,10 @@ fun ScannerScreen(
                 EmptyDevicesView(modifier = Modifier.weight(1f))
             } else {
                 LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     items(devices, key = { it.address }) { device ->
@@ -206,29 +181,35 @@ private fun ScannerStatusCard(
     modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(bottom = 16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = when {
-                errorMessage != null -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
-                isScanning -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
-                else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-            },
-        ),
-        border = BorderStroke(
-            width = 1.dp,
-            color = when {
-                errorMessage != null -> MaterialTheme.colorScheme.error.copy(alpha = 0.4f)
-                isScanning -> MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
-                else -> Color.Transparent
-            },
-        ),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor =
+                    when {
+                        errorMessage != null -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
+                        isScanning -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
+                        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                    },
+            ),
+        border =
+            BorderStroke(
+                width = 1.dp,
+                color =
+                    when {
+                        errorMessage != null -> MaterialTheme.colorScheme.error.copy(alpha = 0.4f)
+                        isScanning -> MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                        else -> Color.Transparent
+                    },
+            ),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (isScanning) {
@@ -256,11 +237,12 @@ private fun ScannerStatusCard(
 
             Column {
                 Text(
-                    text = when {
-                        errorMessage != null -> "Status: Issue Detected"
-                        isScanning -> "Status: Scanning..."
-                        else -> "Status: Ready to Scan"
-                    },
+                    text =
+                        when {
+                            errorMessage != null -> "Status: Issue Detected"
+                            isScanning -> "Status: Scanning..."
+                            else -> "Status: Ready to Scan"
+                        },
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.bodyLarge,
                 )
@@ -285,17 +267,19 @@ private fun ScanControls(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(bottom = 16.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Button(
             onClick = onScanToggle,
             modifier = Modifier.weight(1f),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (isScanning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-            ),
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor = if (isScanning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                ),
         ) {
             Icon(
                 imageVector = Icons.Default.Refresh,
@@ -303,13 +287,14 @@ private fun ScanControls(
                 modifier = Modifier.padding(end = 8.dp),
             )
             Text(
-                text = if (!hasPermissionsState) {
-                    "Grant Permissions"
-                } else if (isScanning) {
-                    "Stop Scan"
-                } else {
-                    "Start Scan"
-                },
+                text =
+                    if (!hasPermissionsState) {
+                        "Grant Permissions"
+                    } else if (isScanning) {
+                        "Stop Scan"
+                    } else {
+                        "Start Scan"
+                    },
             )
         }
 
@@ -328,9 +313,10 @@ private fun DiscoveredDevicesHeader(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(bottom = 8.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -352,12 +338,13 @@ private fun DiscoveredDevicesHeader(
 @Composable
 private fun EmptyDevicesView(modifier: Modifier = Modifier) {
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .border(
-                BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceVariant),
-                shape = RoundedCornerShape(12.dp),
-            ).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .border(
+                    BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceVariant),
+                    shape = RoundedCornerShape(12.dp),
+                ).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)),
         contentAlignment = Alignment.Center,
     ) {
         Column(
@@ -387,22 +374,26 @@ fun DeviceItemCard(
     modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-        ),
-        border = BorderStroke(
-            width = 2.dp,
-            color = MaterialTheme.colorScheme.primary,
-        ),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clickable { onClick() },
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+            ),
+        border =
+            BorderStroke(
+                width = 2.dp,
+                color = MaterialTheme.colorScheme.primary,
+            ),
         shape = RoundedCornerShape(12.dp),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
@@ -421,10 +412,11 @@ fun DeviceItemCard(
                     SuggestionChip(
                         onClick = {},
                         label = { Text("TricycleTops Vehicle", fontSize = 10.sp) },
-                        colors = SuggestionChipDefaults.suggestionChipColors(
-                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                            labelColor = MaterialTheme.colorScheme.primary,
-                        ),
+                        colors =
+                            SuggestionChipDefaults.suggestionChipColors(
+                                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                labelColor = MaterialTheme.colorScheme.primary,
+                            ),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
                     )
                 }
@@ -446,11 +438,16 @@ fun DeviceItemCard(
                     text = "${device.rssi} dBm",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
-                    color = when {
-                        device.rssi > -60 -> Color(0xFF4CAF50) // Strong signal (Green)
-                        device.rssi > -80 -> Color(0xFFFF9800) // Medium signal (Orange)
-                        else -> Color(0xFFF44336) // Weak signal (Red)
-                    },
+                    color =
+                        when {
+                            device.rssi > -60 -> Color(0xFF4CAF50)
+
+                            // Strong signal (Green)
+                            device.rssi > -80 -> Color(0xFFFF9800)
+
+                            // Medium signal (Orange)
+                            else -> Color(0xFFF44336) // Weak signal (Red)
+                        },
                 )
                 Text(
                     text = "Signal",
@@ -468,30 +465,32 @@ fun ScanPulseAnimation() {
     val scale by transition.animateFloat(
         initialValue = 0.6f,
         targetValue = 1.4f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1200, easing = LinearOutSlowInEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(1200, easing = LinearOutSlowInEasing),
+                repeatMode = RepeatMode.Restart,
+            ),
         label = "scale",
     )
     val alpha by transition.animateFloat(
         initialValue = 0.7f,
         targetValue = 0.0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1200, easing = LinearOutSlowInEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(1200, easing = LinearOutSlowInEasing),
+                repeatMode = RepeatMode.Restart,
+            ),
         label = "alpha",
     )
 
     Box(
-        modifier = Modifier
-            .size(48.dp)
-            .graphicsLayer(
-                scaleX = scale,
-                scaleY = scale,
-                alpha = alpha,
-            )
-            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), shape = CircleShape),
+        modifier =
+            Modifier
+                .size(48.dp)
+                .graphicsLayer(
+                    scaleX = scale,
+                    scaleY = scale,
+                    alpha = alpha,
+                ).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), shape = CircleShape),
     )
 }
