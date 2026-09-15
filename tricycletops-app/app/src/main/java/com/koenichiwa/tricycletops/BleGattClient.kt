@@ -118,22 +118,15 @@ class BleGattClient(
                 status: Int,
             ) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
-                    onCharacteristicReadInternal(characteristic, value)
-                }
-            }
-
-            private fun onCharacteristicReadInternal(
-                characteristic: BluetoothGattCharacteristic,
-                value: ByteArray,
-            ) {
-                if (characteristic.uuid == java.util.UUID.fromString("0000fff2-0000-1000-8000-00805f9b34fb")) {
-                    if (value.size >= 4) {
-                        val buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN)
-                        val leftMax = buffer.getShort().toInt() and 0xFFFF
-                        val rightMax = buffer.getShort().toInt() and 0xFFFF
-                        _leftMaxDuty.value = leftMax
-                        _rightMaxDuty.value = rightMax
-                        android.util.Log.i("BleGattClient", "Discovered max duties - Left: $leftMax, Right: $rightMax")
+                    if (characteristic.uuid == java.util.UUID.fromString("0000fff2-0000-1000-8000-00805f9b34fb")) {
+                        if (value.size >= 4) {
+                            val buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN)
+                            val leftMax = buffer.getShort().toInt() and 0xFFFF
+                            val rightMax = buffer.getShort().toInt() and 0xFFFF
+                            _leftMaxDuty.value = leftMax
+                            _rightMaxDuty.value = rightMax
+                            android.util.Log.i("BleGattClient", "Discovered max duties - Left: $leftMax, Right: $rightMax")
+                        }
                     }
                 }
             }
