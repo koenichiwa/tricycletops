@@ -56,5 +56,6 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         super.onStop()
         bleScanner.stopScanning()
+        bleGattClient.disconnect()
     }
 }
