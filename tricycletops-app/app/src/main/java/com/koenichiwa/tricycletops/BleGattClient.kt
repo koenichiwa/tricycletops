@@ -1,17 +1,18 @@
 package com.koenichiwa.tricycletops
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothProfile
 import android.content.Context
+import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.UUID
 
 enum class ConnectionState {
     Disconnected,
@@ -23,6 +24,12 @@ enum class ConnectionState {
 class BleGattClient(
     private val context: Context,
 ) {
+    companion object {
+        val TRICYCLETOPS_SERVICE: UUID = UUID.fromString("0000fff0-0000-1000-8000-00805f9b34fb")
+        val DRIVE_COMMAND_CHARACTERISTIC = UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb")
+        val MAX_DUTY_CYCLE_CHARACTERISTIC: UUID = UUID.fromString("0000fff2-0000-1000-8000-00805f9b34fb")
+    }
+
     private var bluetoothGatt: BluetoothGatt? = null
 
     private val _connectionState = MutableStateFlow(ConnectionState.Disconnected)
@@ -88,7 +95,7 @@ class BleGattClient(
                     return
                 }
 
-                val service = gatt.getService(java.util.UUID.fromString("0000fff0-0000-1000-8000-00805f9b34fb"))
+                val service = gatt.getService(TRICYCLETOPS_SERVICE)
 
                 if (service == null) {
                     _errorMessage.value = "Tricycletops service not found"
@@ -96,7 +103,7 @@ class BleGattClient(
                 }
                 val driveCharacteristic =
                     service.getCharacteristic(
-                        java.util.UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb"),
+                        DRIVE_COMMAND_CHARACTERISTIC,
                     )
                 if (driveCharacteristic == null) {
                     _errorMessage.value = "Tricycletops drive characteristic not found"
@@ -104,12 +111,12 @@ class BleGattClient(
 
                 val maxDutyCharacteristic =
                     service.getCharacteristic(
-                        java.util.UUID.fromString("0000fff2-0000-1000-8000-00805f9b34fb"),
+                        MAX_DUTY_CYCLE_CHARACTERISTIC,
                     )
                 if (maxDutyCharacteristic != null) {
                     gatt.readCharacteristic(maxDutyCharacteristic)
                 } else {
-                    android.util.Log.e("BleGattClient", "Tricycletops max_duty characteristic not found")
+                    Log.e("BleGattClient", "Tricycletops max_duty characteristic not found")
                 }
             }
 
@@ -121,7 +128,7 @@ class BleGattClient(
             ) {
                 // TODO log failure
                 if (status != BluetoothGatt.GATT_SUCCESS) return
-                if (characteristic.uuid != java.util.UUID.fromString("0000fff2-0000-1000-8000-00805f9b34fb")) return
+                if (characteristic.uuid != MAX_DUTY_CYCLE_CHARACTERISTIC) return
                 if (value.size != 4) return
 
                 val buffer = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN)
@@ -129,7 +136,7 @@ class BleGattClient(
                 val rightMax = buffer.getShort().toInt() and 0xFFFF
                 _leftMaxDuty.value = leftMax
                 _rightMaxDuty.value = rightMax
-                android.util.Log.i("BleGattClient", "Discovered max duties - Left: $leftMax, Right: $rightMax")
+                Log.i("BleGattClient", "Discovered max duties - Left: $leftMax, Right: $rightMax")
             }
         }
 
@@ -165,32 +172,25 @@ class BleGattClient(
         left: Int,
         right: Int,
     ) {
-        if (!context.hasBlePermissions() || connectionState.value != ConnectionState.Connected) {
-            return
-        }
-
+        if (!context.hasBlePermissions()) return
+        if (connectionState.value != ConnectionState.Connected) return
         val gatt = bluetoothGatt ?: return
-        val serviceUuid = java.util.UUID.fromString("0000fff0-0000-1000-8000-00805f9b34fb")
-        val charUuid = java.util.UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb")
+        val service = gatt.getService(TRICYCLETOPS_SERVICE) ?: return
+        val characteristic = service.getCharacteristic(DRIVE_COMMAND_CHARACTERISTIC) ?: return
 
-        val service = gatt.getService(serviceUuid)
-        val characteristic = service?.getCharacteristic(charUuid)
+        val buffer = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN)
+        buffer.putInt(left)
+        buffer.putInt(right)
+        val payload = buffer.array()
 
-        if (characteristic != null) {
-            val buffer = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN)
-            buffer.putInt(left)
-            buffer.putInt(right)
-            val payload = buffer.array()
-
-            try {
-                gatt.writeCharacteristic(
-                    characteristic,
-                    payload,
-                    BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT,
-                )
-            } catch (e: Exception) {
-                android.util.Log.e("BleGattClient", "Failed to write characteristic: ${e.localizedMessage}")
-            }
+        try {
+            gatt.writeCharacteristic(
+                characteristic,
+                payload,
+                BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT,
+            )
+        } catch (e: Exception) {
+            Log.e("BleGattClient", "Failed to write characteristic: ${e.localizedMessage}")
         }
     }
 }
