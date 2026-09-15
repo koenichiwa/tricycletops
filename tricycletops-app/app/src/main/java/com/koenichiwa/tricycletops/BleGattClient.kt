@@ -26,7 +26,7 @@ class BleGattClient(
 ) {
     companion object {
         val TRICYCLETOPS_SERVICE: UUID = UUID.fromString("0000fff0-0000-1000-8000-00805f9b34fb")
-        val DRIVE_COMMAND_CHARACTERISTIC = UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb")
+        val DRIVE_COMMAND_CHARACTERISTIC: UUID = UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb")
         val MAX_DUTY_CYCLE_CHARACTERISTIC: UUID = UUID.fromString("0000fff2-0000-1000-8000-00805f9b34fb")
     }
 
