@@ -1,151 +1,87 @@
 package com.koenichiwa.tricycletops
 
 import android.Manifest
-import android.app.Application
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothManager
-import android.bluetooth.le.BluetoothLeScanner
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.content.pm.PackageManager
-import android.util.Log
+import android.annotation.SuppressLint
 import androidx.annotation.RequiresPermission
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import com.koenichiwa.tricycletops.bluetooth.BleState
+import com.koenichiwa.tricycletops.bluetooth.BluetoothStatePublisher
+import com.koenichiwa.tricycletops.domain.Device
+import com.koenichiwa.tricycletops.domain.DevicePublisher
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-
-sealed interface ScannerState {
-    data object Initializing : ScannerState
-
-    data object PermissionRequired : ScannerState
-
-    data object BluetoothDisabled : ScannerState
-
-    data object Ready : ScannerState
-
-    data object Scanning : ScannerState
-
-    data class Error(
-        val message: String,
-    ) : ScannerState
-}
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.scan
+import kotlinx.coroutines.flow.stateIn
 
 class ScannerViewModel(
-    application: Application,
-) : AndroidViewModel(application) {
-    private val bluetoothManager = application.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
-    private val bluetoothAdapter = bluetoothManager?.adapter
-    private val bleScanner = bluetoothAdapter?.let { BleScanner(it) }
-    private val _isBluetoothEnabled = MutableStateFlow(false)
-    val isBluetoothEnabled: StateFlow<Boolean> = _isBluetoothEnabled.asStateFlow()
-    private val _hasPermissions = MutableStateFlow(false)
-    val hasPermissions: StateFlow<Boolean> = _hasPermissions.asStateFlow()
-    val isScanning = bleScanner?.isScanning ?: MutableStateFlow(false).asStateFlow()
-    val discoveredDevices = bleScanner?.discoveredDevices ?: MutableStateFlow<List<BleDevice>>(emptyList()).asStateFlow()
-
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage = _errorMessage.asStateFlow()
-
-    private val bluetoothReceiver =
-        object : BroadcastReceiver() {
-            override fun onReceive(
-                context: Context,
-                intent: Intent,
-            ) {
-                val action = intent.action
-                if (action == BluetoothAdapter.ACTION_STATE_CHANGED) {
-                    val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)
-                    when (state) {
-                        BluetoothAdapter.STATE_ON -> {
-                            if (bluetoothAdapter?.bluetoothLeScanner == null) {
-                                return
-                            }
-                            _errorMessage.value = null
-
-                            _isBluetoothEnabled.value = true
-                        }
-
-                        BluetoothAdapter.STATE_OFF, BluetoothAdapter.STATE_TURNING_OFF -> {
-                            _isBluetoothEnabled.value = false
-                            _errorMessage.value = "Bluetooth is turned off"
-                            // Auto-stop scanning if Bluetooth is turned off
-                            stopScanning()
-                        }
-                    }
-                }
+    val statePublisher: BluetoothStatePublisher,
+    private val devicePublisher: DevicePublisher,
+) : ViewModel() {
+    class Factory(
+        private val statePublisher: BluetoothStatePublisher,
+        private val devicePublisher: DevicePublisher,
+    ) : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(ScannerViewModel::class.java)) {
+                @Suppress("UNCHECKED_CAST")
+                return ScannerViewModel(statePublisher, devicePublisher) as T
             }
-        }
-
-    init {
-        val filter = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
-        application.registerReceiver(bluetoothReceiver, filter)
-        checkBluetoothState()
-        updatePermissionsState()
-    }
-
-    private fun checkBluetoothState() {
-        if (bluetoothAdapter == null) {
-            _isBluetoothEnabled.value = false
-            _errorMessage.value = "Bluetooth is not supported on this device"
-            return
-        }
-
-        val scanner: BluetoothLeScanner? = bluetoothAdapter.bluetoothLeScanner
-        if (scanner == null) {
-            _isBluetoothEnabled.value = false
-            _errorMessage.value = "Bluetooth LE Scanner not available"
-            return
-        }
-
-        val enabled = bluetoothAdapter.isEnabled
-        _isBluetoothEnabled.value = enabled
-        if (!enabled) {
-            _errorMessage.value = "Bluetooth is turned off"
+            throw IllegalArgumentException("Unknown ViewModel class")
         }
     }
 
-    fun updatePermissionsState() {
-        val scanGranted =
-            ContextCompat.checkSelfPermission(getApplication(), Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED
-        Log.i(javaClass.name, scanGranted.toString())
-        _hasPermissions.value = scanGranted
-    }
+    @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
+    private fun observeDevices() =
+        devicePublisher
+            .observe()
+            .scan(emptyMap<String, Device>()) { devices, device ->
+                devices + (device.id to device)
+            }.map {
+                it.values.toSortedSet { left, right -> left.id.compareTo(right.id) }
+            }.onStart {
+                _bleState.value = BleState.Scanning
+            }.catch { error ->
+                _bleState.value = BleState.Error(error)
+            }
 
-    fun startScanning() {
-        if (ContextCompat.checkSelfPermission(getApplication(), Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
-            _hasPermissions.value = false
-            return
-        }
-        bleScanner?.startScanning()
-    }
+    val enabled = statePublisher.observeEnabled()
+    val permitted = statePublisher.observePermissions()
 
-    fun stopScanning() {
-        if (ContextCompat.checkSelfPermission(getApplication(), Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
-            _hasPermissions.value = false
-            return
-        }
-        bleScanner?.stopScanning()
-    }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val deviceState: StateFlow<Set<Device>> =
+        enabled
+            .combine(permitted) { enabled, permitted ->
+                enabled to permitted
+            }.flatMapLatest { (enabled, permitted) ->
+                if (!enabled) {
+                    _bleState.value = BleState.Off
+                    flowOf(emptySet())
+                } else if (!permitted) {
+                    _bleState.value = BleState.NoPermission
+                    flowOf(emptySet())
+                } else {
+                    @SuppressLint("MissingPermission")
+                    observeDevices()
+                }
+            }.stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(),
+                initialValue = emptySet(),
+            )
 
-    fun clearDevices() {
-        bleScanner?.clearDevices()
-    }
+    fun updatePermissions() = statePublisher.triggerPermissionUpdate()
 
-    override fun onCleared() {
-        super.onCleared()
-        try {
-            getApplication<Application>().unregisterReceiver(bluetoothReceiver)
-        } catch (e: IllegalArgumentException) {
-            // Ignore if receiver was not registered
-        }
-        try {
-            bleScanner?.stopScanning()
-        } catch (e: SecurityException) {
-            // Ignore missing permission during teardown
-        }
-    }
+    private val _bleState = MutableStateFlow<BleState>(BleState.Off)
+    val bleState = _bleState.asStateFlow()
 }

@@ -14,11 +14,12 @@ import kotlinx.coroutines.flow.callbackFlow
 
 class BleDevicePublisher(
     private val adapter: BluetoothAdapter,
-    private val scanner: BluetoothLeScanner,
 ) : DevicePublisher {
     @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
     override fun observe(): Flow<Device> =
         callbackFlow {
+            val scanner = adapter.bluetoothLeScanner ?: return@callbackFlow
+
             val callback =
                 object : ScanCallback() {
                     override fun onScanResult(
@@ -40,7 +41,6 @@ class BleDevicePublisher(
                         close(BleScanException(errorCode))
                     }
                 }
-
             scanner.startScan(callback)
 
             awaitClose {
