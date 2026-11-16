@@ -1,0 +1,46 @@
+stages:
+  - lint
+  - test
+  - build
+
+# --- App Jobs (Requires Android SDK & JDK 17) ---
+.android_job:
+  image: jangrewe/gitlab-ci-android:latest
+  before_script:
+    - cd tricycletops-app
+    - chmod +x gradlew
+
+app-lint:
+  extends: .android_job
+  stage: lint
+  script:
+    - ./gradlew ktlintCheck
+
+app-test:
+  extends: .android_job
+  stage: test
+  script:
+    - ./gradlew test
+
+app-build:
+  extends: .android_job
+  stage: build
+  script:
+    - ./gradlew assembleDebug
+  artifacts:
+    paths:
+      - tricycletops-app/app/build/outputs/apk/debug/*.apk
+
+# --- Firmware Jobs (Requires Rust no_std target) ---
+.rust_job:
+  image: rust:latest
+  before_script:
+    - cd tricycletops-fw
+    - rustup target add thumbv6m-none-eabi
+
+fw-build:
+  extends: .rust_job
+  stage: build
+  script:
+    - cargo check --target thumbv6m-none-eabi
+    - cargo build --release --target thumbv6m-none-eabi

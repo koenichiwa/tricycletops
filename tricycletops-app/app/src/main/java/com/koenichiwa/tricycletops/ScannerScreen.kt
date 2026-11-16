@@ -1,6 +1,9 @@
 package com.koenichiwa.tricycletops
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothManager
+import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -39,19 +42,19 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -59,27 +62,57 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.koenichiwa.tricycletops.bluetooth.BleState
+import com.koenichiwa.tricycletops.domain.Device
 import com.koenichiwa.tricycletops.ui.TricycletopsScaffold
 
 @Composable
 fun ScannerScreen(
-    onDeviceSelect: (BleDevice) -> Unit,
+    onDeviceSelect: (Device) -> Unit,
     viewModel: ScannerViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val isScanning by viewModel.isScanning.collectAsState()
-    val devices by viewModel.discoveredDevices.collectAsState()
-    val errorMessage by viewModel.errorMessage.collectAsState()
-    val hasPermissionsState by viewModel.hasPermissions.collectAsState()
-    val isBluetoothEnabled by viewModel.isBluetoothEnabled.collectAsState()
+    val devices by viewModel.deviceState.collectAsState()
+    val bleState by viewModel.bleState.collectAsState()
+
+    val context = LocalContext.current
+//    val bluetoothManager = remember(context) {
+//        context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+//    }
+//    val bluetoothAdapter = remember(bluetoothManager) {
+//        bluetoothManager?.adapter
+//    }
+
+    // Map domain Devices to UI BleDevices
+//    val uiDevices = remember(devices, bluetoothAdapter) {
+//        devices.mapNotNull { domainDevice ->
+//            bluetoothAdapter?.let { adapter ->
+//                try {
+//                    @SuppressLint("MissingPermission")
+//                    val remoteDevice = adapter.getRemoteDevice(domainDevice.id)
+//                    @SuppressLint("MissingPermission")
+//                    val name = remoteDevice.name
+//                    BleDevice(
+//                        address = domainDevice.id,
+//                        name = name,
+//                        rssi = -65, // placeholder RSSI since domain model only exposes id
+//                        rawDevice = remoteDevice,
+//                    )
+//                } catch (e: Exception) {
+//                    null
+//                }
+//            }
+//        }
+//    }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.updatePermissionsState()
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) {
+                    viewModel.updatePermissions()
+                }
             }
-        }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
@@ -91,7 +124,7 @@ fun ScannerScreen(
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestMultiplePermissions(),
         ) { _ ->
-            viewModel.updatePermissionsState()
+            viewModel.updatePermissions()
         }
 
     TricycletopsScaffold(
@@ -109,31 +142,19 @@ fun ScannerScreen(
             ScannerIntroSection()
 
             ScannerStatusCard(
-                isScanning = isScanning,
-                errorMessage = errorMessage,
+                bleState = bleState,
             )
 
             ScanControls(
-                isScanning = isScanning,
-                hasPermissionsState = hasPermissionsState,
-                onScanToggle = {
-                    if (!hasPermissionsState) {
-                        permissionLauncher.launch(
-                            arrayOf(
-                                Manifest.permission.BLUETOOTH_SCAN,
-                                Manifest.permission.BLUETOOTH_CONNECT,
-                            ),
-                        )
-                    } else {
-                        if (isScanning) {
-                            viewModel.stopScanning()
-                        } else if (isBluetoothEnabled) {
-                            viewModel.startScanning()
-                        }
-                    }
+                bleState = bleState,
+                onGrantPermissions = {
+                    permissionLauncher.launch(
+                        arrayOf(
+                            Manifest.permission.BLUETOOTH_SCAN,
+                            Manifest.permission.BLUETOOTH_CONNECT,
+                        ),
+                    )
                 },
-                onClearClick = { viewModel.clearDevices() },
-                clearEnabled = devices.isNotEmpty() && !isScanning,
             )
 
             DiscoveredDevicesHeader(deviceCount = devices.size)
@@ -141,6 +162,7 @@ fun ScannerScreen(
             if (devices.isEmpty()) {
                 EmptyDevicesView(modifier = Modifier.weight(1f))
             } else {
+                val sortedDevices = devices.sortedBy { it.id }
                 LazyColumn(
                     modifier =
                         Modifier
@@ -148,7 +170,9 @@ fun ScannerScreen(
                             .fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    items(devices, key = { it.address }) { device ->
+
+                    items(devices.size, key = { idx -> sortedDevices[idx] }) {
+                        val device = sortedDevices[it]
                         DeviceItemCard(
                             device = device,
                             onClick = { onDeviceSelect(device) },
@@ -186,8 +210,7 @@ private fun ScannerIntroSection(modifier: Modifier = Modifier) {
 
 @Composable
 private fun ScannerStatusCard(
-    isScanning: Boolean,
-    errorMessage: String?,
+    bleState: BleState,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -198,20 +221,36 @@ private fun ScannerStatusCard(
         colors =
             CardDefaults.cardColors(
                 containerColor =
-                    when {
-                        errorMessage != null -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
-                        isScanning -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
-                        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                    when (bleState) {
+                        is BleState.Error, BleState.Off, BleState.NoPermission -> {
+                            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
+                        }
+
+                        BleState.Scanning -> {
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
+                        }
+
+                        BleState.Ready -> {
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                        }
                     },
             ),
         border =
             BorderStroke(
                 width = 1.dp,
                 color =
-                    when {
-                        errorMessage != null -> MaterialTheme.colorScheme.error.copy(alpha = 0.4f)
-                        isScanning -> MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
-                        else -> Color.Transparent
+                    when (bleState) {
+                        is BleState.Error, BleState.Off, BleState.NoPermission -> {
+                            MaterialTheme.colorScheme.error.copy(alpha = 0.4f)
+                        }
+
+                        BleState.Scanning -> {
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                        }
+
+                        BleState.Ready -> {
+                            Color.Transparent
+                        }
                     },
             ),
     ) {
@@ -222,45 +261,72 @@ private fun ScannerStatusCard(
                     .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (isScanning) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.size(48.dp),
-                ) {
-                    ScanPulseAnimation()
+            when (bleState) {
+                is BleState.Error, BleState.Off, BleState.NoPermission -> {
                     Icon(
-                        imageVector = Icons.Default.Bluetooth,
-                        contentDescription = "Scanning",
-                        tint = MaterialTheme.colorScheme.primary,
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = "Status",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(32.dp),
                     )
                 }
-            } else {
-                Icon(
-                    imageVector = if (errorMessage != null) Icons.Default.Warning else Icons.Default.Info,
-                    contentDescription = "Status",
-                    tint = if (errorMessage != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(32.dp),
-                )
+
+                BleState.Scanning -> {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.size(48.dp),
+                    ) {
+                        ScanPulseAnimation()
+                        Icon(
+                            imageVector = Icons.Default.Bluetooth,
+                            contentDescription = "Scanning",
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
+
+                BleState.Ready -> {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "Status",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(32.dp),
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
             Column {
+                val headerText =
+                    when (bleState) {
+                        is BleState.Error, BleState.Off, BleState.NoPermission -> "Status: Issue detected"
+                        BleState.Scanning -> "Status: Scanning..."
+                        BleState.Ready -> "Status: Ready to Scan..."
+                    }
+                val detailText =
+                    when (bleState) {
+                        is BleState.Error -> bleState.cause.localizedMessage ?: "Unknown error occurred"
+                        BleState.Off -> "Bluetooth is disabled. Please enable it."
+                        BleState.NoPermission -> "Bluetooth permissions are required."
+                        BleState.Scanning -> "Searching for nearby TricycleTops vehicles..."
+                        BleState.Ready -> "Ready to scan for vehicles"
+                    }
+                val color =
+                    when (bleState) {
+                        is BleState.Error, BleState.Off, BleState.NoPermission -> MaterialTheme.colorScheme.error
+                        BleState.Scanning, BleState.Ready -> MaterialTheme.colorScheme.onSurfaceVariant
+                    }
                 Text(
-                    text =
-                        when {
-                            errorMessage != null -> "Status: Issue Detected"
-                            isScanning -> "Status: Scanning..."
-                            else -> "Status: Ready to Scan"
-                        },
+                    text = headerText,
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.bodyLarge,
                 )
 
                 Text(
-                    text = errorMessage ?: if (isScanning) "Searching for nearby Bluetooth devices..." else "Press Scan to begin searching.",
+                    text = detailText,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (errorMessage != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = color,
                 )
             }
         }
@@ -269,13 +335,11 @@ private fun ScannerStatusCard(
 
 @Composable
 private fun ScanControls(
-    isScanning: Boolean,
-    hasPermissionsState: Boolean,
-    onScanToggle: () -> Unit,
-    onClearClick: () -> Unit,
-    clearEnabled: Boolean,
+    bleState: BleState,
+    onGrantPermissions: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val enabled = bleState is BleState.NoPermission
     Row(
         modifier =
             modifier
@@ -284,12 +348,24 @@ private fun ScanControls(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Button(
-            onClick = onScanToggle,
+            onClick = {
+                if (bleState is BleState.NoPermission) {
+                    onGrantPermissions()
+                }
+            },
             modifier = Modifier.weight(1f),
             colors =
                 ButtonDefaults.buttonColors(
-                    containerColor = if (isScanning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                    containerColor =
+                        if (bleState == BleState.Scanning) {
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                        } else if (bleState is BleState.NoPermission) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.error
+                        },
                 ),
+            enabled = enabled,
         ) {
             Icon(
                 imageVector = Icons.Default.Refresh,
@@ -298,21 +374,14 @@ private fun ScanControls(
             )
             Text(
                 text =
-                    if (!hasPermissionsState) {
-                        "Grant Permissions"
-                    } else if (isScanning) {
-                        "Stop Scan"
-                    } else {
-                        "Start Scan"
+                    when (bleState) {
+                        is BleState.Error -> "Scan Error"
+                        BleState.Off -> "Bluetooth Disabled"
+                        BleState.NoPermission -> "Grant Permissions"
+                        BleState.Ready -> "Ready"
+                        BleState.Scanning -> "Scanning Active"
                     },
             )
-        }
-
-        OutlinedButton(
-            onClick = onClearClick,
-            enabled = clearEnabled,
-        ) {
-            Text("Clear")
         }
     }
 }
@@ -379,7 +448,7 @@ private fun EmptyDevicesView(modifier: Modifier = Modifier) {
 
 @Composable
 fun DeviceItemCard(
-    device: BleDevice,
+    device: Device,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -413,7 +482,7 @@ fun DeviceItemCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
-                        text = device.name ?: "Unknown Device",
+                        text = device.id,
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.primary,
