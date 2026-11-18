@@ -134,9 +134,10 @@ Run these checks before finalizing changes to ensure CI and pre-commit hooks pas
 8. **Status Indication & BLE Handling**:
    - The BLE peripheral runs via `trouble-host` stack inside `ble_peripheral::run()`.
    - `indicator::indicator_task` drives the onboard status LED (PIN_15) based on `IndicatorState` signals:
-     - `Advertising`: 500ms on / 500ms off blinking.
-     - `Connected`: Solid ON.
-     - `Disconnected`: Rapid flash (100ms on / 100ms off) before returning to advertising.
+     - `Advertising`: 1Hz blinking (500ms on / 500ms off).
+     - `Connected`: Solid ON when actively connected and controlled.
+     - `Failsafe`: Rapid flash at 5Hz (100ms on / 100ms off) on 500ms command timeout or motor actuator error.
+     - `Disconnection`: Transitions back to the 1Hz advertising pattern immediately, disarming the command watchdog.
 
 ### 🤖 Android Application (Kotlin)
 

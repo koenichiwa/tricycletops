@@ -29,4 +29,4 @@
 
 - [x] 6.1 Introduce `CarCommand` enum (`Drive(DriveCommand)`, `Disconnected`) and `handle_disconnect` in `src/car_control.rs`, disarming the 500ms command timeout watchdog and clearing failsafe state on disconnect without indicator clobbering, verified by host unit tests (`cargo test --lib --target host-tuple`).
 - [x] 6.2 Update `src/ble_peripheral.rs` to signal `CarCommand::Disconnected` on link termination, and update signal types in `src/main.rs`, verifying target compilation (`cargo check --target thumbv6m-none-eabi`).
-- [ ] 6.3 Execute full host unit test suite, target release build, and workspace pre-commit checks (`cargo test --lib --target host-tuple`, `cargo build --release --target thumbv6m-none-eabi`, and `pre-commit run --all-files`).
+- [x] 6.3 Execute full host unit test suite, target release build, and workspace pre-commit checks (`cargo test --lib --target host-tuple`, `cargo build --release --target thumbv6m-none-eabi`, and `pre-commit run --all-files`).

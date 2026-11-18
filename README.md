@@ -134,4 +134,7 @@ Characteristic `fff2` exposes the minimum (deadband) and maximum PWM duty cycle 
 
 The firmware outputs highly optimized debug logs over RTT (Real-Time Transfer).
 *   If using `probe-rs`, logs will stream directly to your terminal.
-*   The onboard LED on the Raspberry Pi Pico W blinks once per second when advertising, and changes state when a central BLE device connects/disconnects.
+*   The onboard LED on the Raspberry Pi Pico W indicates peripheral operational state:
+    - **Advertising**: 1Hz blinking (500ms ON / 500ms OFF).
+    - **Connected**: Solid ON when actively connected and controlled.
+    - **Failsafe**: 5Hz rapid blinking (100ms ON / 100ms OFF) if the 500ms command watchdog times out or a motor actuator error occurs.
