@@ -54,9 +54,9 @@ To compile and run the Android app:
     cargo check --target thumbv6m-none-eabi
     ```
 3.  **Run host unit tests**:
-    Execute fast unit tests on your host machine without physical hardware (Cargo automatically substitutes `host-tuple` with your OS/CPU target):
+    Execute fast unit tests on your host machine without physical hardware:
     ```bash
-    cargo test --lib --target host-tuple
+    cargo test-host
     ```
 4.  **Build the binary**:
     Compile the release-optimized binary:

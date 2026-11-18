@@ -19,7 +19,7 @@ pub trait Motor {
     fn stop(&mut self) -> Result<(), Self::Error>;
 }
 
-#[cfg(any(test, not(all(target_arch = "arm", target_os = "none"))))]
+#[cfg(test)]
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct MockMotor {
     pub max_duty: u16,
@@ -30,7 +30,7 @@ pub struct MockMotor {
     pub fail_stop: bool,
 }
 
-#[cfg(any(test, not(all(target_arch = "arm", target_os = "none"))))]
+#[cfg(test)]
 impl MockMotor {
     pub const fn new(max_duty: u16) -> Self {
         Self {
@@ -44,7 +44,7 @@ impl MockMotor {
     }
 }
 
-#[cfg(any(test, not(all(target_arch = "arm", target_os = "none"))))]
+#[cfg(test)]
 impl Motor for MockMotor {
     type Error = &'static str;
 
