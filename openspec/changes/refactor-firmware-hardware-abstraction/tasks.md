@@ -18,7 +18,7 @@
 ## 4. BLE Peripheral Resilience & System Wiring
 
 - [x] 4.1 Harden `src/ble_peripheral.rs` by replacing `panic!` on advertisement or connection error with warning logs and an async retry backoff loop.
-- [ ] 4.2 Wire concrete `MotorControl` instances in `src/board.rs` and update task signatures and signals in `src/main.rs`, verifying target release build (`cargo build --release --target thumbv6m-none-eabi`).
+- [x] 4.2 Wire concrete `MotorControl` instances in `src/board.rs` and update task signatures and signals in `src/main.rs`, verifying target release build (`cargo build --release --target thumbv6m-none-eabi`).
 
 ## 5. Full Validation & Verification
 
