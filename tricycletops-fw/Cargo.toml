@@ -18,6 +18,8 @@ embassy-futures = { version = "0.1.2", features = ["defmt"] }
 static_cell = "2.1.0"
 portable-atomic = { version = "1.5.1", features = ["critical-section"] }
 defmt = "1.1.1"
+
+[target.'cfg(not(all(target_arch = "arm", target_os = "none")))'.dependencies]
 embassy-time = { version = "0.5.0", features = ["generic-queue-64"] }
 
 [target.'cfg(not(all(target_arch = "arm", target_os = "none")))'.dev-dependencies]
