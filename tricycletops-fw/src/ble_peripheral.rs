@@ -25,19 +25,37 @@ struct Server {
 struct CarService {
     #[characteristic(uuid = "fff1", read, write, value = [0u8; 8])]
     drive_command: [u8; 8],
-    #[characteristic(uuid = "fff2", read, value = [0u8; 4])]
-    max_duty: [u8; 4],
+    #[characteristic(uuid = "fff2", read, value = [0u8; 8])]
+    duty_limits: [u8; 8],
+}
+
+pub trait IntoDutyLimits {
+    fn into_duty_limits(self) -> ((u16, u16), (u16, u16));
+}
+
+impl IntoDutyLimits for ((u16, u16), (u16, u16)) {
+    fn into_duty_limits(self) -> ((u16, u16), (u16, u16)) {
+        self
+    }
+}
+
+impl IntoDutyLimits for (u16, u16) {
+    fn into_duty_limits(self) -> ((u16, u16), (u16, u16)) {
+        ((0, self.0), (0, self.1))
+    }
 }
 
 /// Run the BLE stack.
-pub async fn run<C>(
+pub async fn run<C, D>(
     controller: C,
     command_signal: &'static Signal<ThreadModeRawMutex, DriveCommand>,
     led_pin: Output<'static>,
-    max_duties: (u16, u16),
+    duty_limits: D,
 ) where
     C: Controller,
+    D: IntoDutyLimits,
 {
+    let duty_limits = duty_limits.into_duty_limits();
     // Using a fixed "random" address can be useful for testing. In real scenarios, one would
     // use e.g. the MAC 6 byte array as the address (how to get that varies by the platform).
     let address: Address = Address::random([0xff, 0x8f, 0x1a, 0x05, 0xe4, 0xff]);
@@ -65,7 +83,7 @@ pub async fn run<C>(
             match advertise("Tricycletops", &mut peripheral, &server).await {
                 Ok(conn) => {
                     // set up tasks when the connection is established to a central, so they don't run when no one is connected.
-                    let _ = gatt_events_task(&server, &conn, command_signal, max_duties).await;
+                    let _ = gatt_events_task(&server, &conn, command_signal, duty_limits).await;
                 }
                 Err(e) => {
                     let e = defmt::Debug2Format(&e);
@@ -103,15 +121,17 @@ async fn gatt_events_task<P: PacketPool>(
     server: &Server<'_>,
     conn: &GattConnection<'_, '_, P>,
     command_signal: &'static Signal<ThreadModeRawMutex, DriveCommand>,
-    max_duties: (u16, u16),
+    duty_limits: ((u16, u16), (u16, u16)),
 ) -> Result<(), Error> {
     let drive_command_char = server.car_service.drive_command;
-    let max_duty_char = server.car_service.max_duty;
+    let duty_limits_char = server.car_service.duty_limits;
 
-    let mut max_duty_bytes = [0u8; 4];
-    max_duty_bytes[0..2].copy_from_slice(&max_duties.0.to_le_bytes());
-    max_duty_bytes[2..4].copy_from_slice(&max_duties.1.to_le_bytes());
-    conn.set(&max_duty_char, &max_duty_bytes)?;
+    let mut duty_limits_bytes = [0u8; 8];
+    duty_limits_bytes[0..2].copy_from_slice(&duty_limits.0.0.to_le_bytes());
+    duty_limits_bytes[2..4].copy_from_slice(&duty_limits.0.1.to_le_bytes());
+    duty_limits_bytes[4..6].copy_from_slice(&duty_limits.1.0.to_le_bytes());
+    duty_limits_bytes[6..8].copy_from_slice(&duty_limits.1.1.to_le_bytes());
+    conn.set(&duty_limits_char, &duty_limits_bytes)?;
 
     let reason = loop {
         match conn.next().await {
