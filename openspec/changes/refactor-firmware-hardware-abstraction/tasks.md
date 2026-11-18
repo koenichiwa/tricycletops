@@ -13,7 +13,7 @@
 ## 3. Declarative Indicator State Machine
 
 - [x] 3.1 Implement `IndicatorState` (Advertising, Connected, Failsafe) and declarative `BlinkPattern` in `src/indicator.rs`, and verify pattern definitions in host unit tests (`cargo test --lib`).
-- [ ] 3.2 Implement the flattened, interruptible `step_phase` blink runner for `indicator_task`, and verify target compilation (`cargo check --target thumbv6m-none-eabi`).
+- [x] 3.2 Implement the flattened, interruptible `step_phase` blink runner for `indicator_task`, and verify target compilation (`cargo check --target thumbv6m-none-eabi`).
 
 ## 4. BLE Peripheral Resilience & System Wiring
 
