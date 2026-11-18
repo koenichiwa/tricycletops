@@ -20,6 +20,9 @@ portable-atomic = { version = "1.5.1", features = ["critical-section"] }
 defmt = "1.1.1"
 embassy-time = { version = "0.5.0", features = ["generic-queue-64"] }
 
+[dev-dependencies]
+critical-section = { version = "1.2", features = ["std"] }
+
 [target.'cfg(all(target_arch = "arm", target_os = "none"))'.dependencies]
 embassy-executor = { version = "0.10.0", features = [
     "platform-cortex-m",

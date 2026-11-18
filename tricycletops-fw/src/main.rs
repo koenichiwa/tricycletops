@@ -19,7 +19,7 @@ static INDICATOR_SIGNAL: Signal<ThreadModeRawMutex, PeripheralState> = Signal::n
 
 #[embassy_executor::task]
 async fn car_control_task(mut car: TargetCarControl) -> ! {
-    car.run(&CAR_COMMAND_SIGNAL).await
+    car.run(&CAR_COMMAND_SIGNAL, &INDICATOR_SIGNAL).await
 }
 
 #[embassy_executor::main]

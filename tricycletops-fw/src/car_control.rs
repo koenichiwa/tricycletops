@@ -91,30 +91,83 @@ impl<L: Motor, R: Motor> CarControl<L, R> {
         &mut self.right_motor
     }
 
+    pub fn handle_command<M: RawMutex>(
+        &mut self,
+        cmd: DriveCommand,
+        indicator_signal: &Signal<M, crate::indicator::IndicatorState>,
+        in_failsafe: &mut bool,
+    ) -> Result<(), CarControlError<L::Error, R::Error>> {
+        match self.set_speeds(cmd.left, cmd.right) {
+            Ok(()) => {
+                if *in_failsafe {
+                    *in_failsafe = false;
+                    indicator_signal.signal(crate::indicator::IndicatorState::Connected);
+                }
+                Ok(())
+            }
+            Err(err) => {
+                let _ = self.stop();
+                *in_failsafe = true;
+                indicator_signal.signal(crate::indicator::IndicatorState::Failsafe);
+                Err(err)
+            }
+        }
+    }
+
+    pub fn handle_watchdog_timeout<M: RawMutex>(
+        &mut self,
+        indicator_signal: &Signal<M, crate::indicator::IndicatorState>,
+        in_failsafe: &mut bool,
+    ) {
+        let _ = self.stop();
+        *in_failsafe = true;
+        indicator_signal.signal(crate::indicator::IndicatorState::Failsafe);
+    }
+
     pub async fn run<M: RawMutex>(
         &mut self,
         drive_command_signal: &'static Signal<M, DriveCommand>,
+        indicator_signal: &'static Signal<M, crate::indicator::IndicatorState>,
     ) -> ! {
         const WATCHDOG_TIMEOUT: Duration = Duration::from_millis(500);
 
+        let mut has_received_command = false;
+        let mut in_failsafe = false;
+
         loop {
-            match with_timeout(WATCHDOG_TIMEOUT, drive_command_signal.wait()).await {
-                Ok(cmd) => {
-                    info!(
-                        "Car control task: setting speeds left={}, right={}",
-                        cmd.left, cmd.right
+            if !has_received_command {
+                let cmd = drive_command_signal.wait().await;
+                has_received_command = true;
+                info!(
+                    "Car control task: setting initial speeds left={}, right={}",
+                    cmd.left, cmd.right
+                );
+                if let Err(err) = self.handle_command(cmd, indicator_signal, &mut in_failsafe) {
+                    warn!(
+                        "Motor error setting speeds: {:?}",
+                        defmt::Debug2Format(&err)
                     );
-                    if let Err(err) = self.set_speeds(cmd.left, cmd.right) {
-                        warn!(
-                            "Motor error setting speeds: {:?}",
-                            defmt::Debug2Format(&err)
-                        );
-                        let _ = self.stop();
-                    }
                 }
-                Err(_) => {
-                    // Watchdog timeout elapsed without receiving a new drive command -> safety halt
-                    let _ = self.stop();
+            } else {
+                match with_timeout(WATCHDOG_TIMEOUT, drive_command_signal.wait()).await {
+                    Ok(cmd) => {
+                        info!(
+                            "Car control task: setting speeds left={}, right={}",
+                            cmd.left, cmd.right
+                        );
+                        if let Err(err) =
+                            self.handle_command(cmd, indicator_signal, &mut in_failsafe)
+                        {
+                            warn!(
+                                "Motor error setting speeds: {:?}",
+                                defmt::Debug2Format(&err)
+                            );
+                        }
+                    }
+                    Err(_) => {
+                        // Watchdog timeout elapsed without receiving a new drive command -> safety halt
+                        self.handle_watchdog_timeout(indicator_signal, &mut in_failsafe);
+                    }
                 }
             }
         }
@@ -244,5 +297,82 @@ mod tests {
             res,
             Err(CarControlError::RightMotor("mock motor set_duty failed"))
         );
+    }
+
+    use crate::indicator::IndicatorState;
+    use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
+
+    #[test]
+    fn test_car_control_failsafe_on_motor_error() {
+        let left = MockMotor::new(2500);
+        let mut right = MockMotor::new(2500);
+        right.fail_set_duty = true;
+        let mut car = CarControl::new(left, right);
+
+        let indicator_signal: Signal<CriticalSectionRawMutex, IndicatorState> = Signal::new();
+        let mut in_failsafe = false;
+
+        let cmd = DriveCommand {
+            left: 1000,
+            right: 1000,
+        };
+        let res = car.handle_command(cmd, &indicator_signal, &mut in_failsafe);
+
+        assert!(res.is_err());
+        assert!(in_failsafe);
+        assert!(indicator_signal.signaled());
+        assert_eq!(indicator_signal.try_take(), Some(IndicatorState::Failsafe));
+        assert!(car.left_motor().stopped);
+        assert!(car.right_motor().stopped);
+    }
+
+    #[test]
+    fn test_car_control_watchdog_timeout() {
+        let left = MockMotor::new(2500);
+        let right = MockMotor::new(2500);
+        let mut car = CarControl::new(left, right);
+
+        let indicator_signal: Signal<CriticalSectionRawMutex, IndicatorState> = Signal::new();
+        let mut in_failsafe = false;
+
+        // Start motors
+        assert!(car.set_speeds(1000, 1000).is_ok());
+        assert!(!car.left_motor().stopped);
+
+        // Watchdog timeout occurs
+        car.handle_watchdog_timeout(&indicator_signal, &mut in_failsafe);
+
+        assert!(in_failsafe);
+        assert!(indicator_signal.signaled());
+        assert_eq!(indicator_signal.try_take(), Some(IndicatorState::Failsafe));
+        assert!(car.left_motor().stopped);
+        assert_eq!(car.left_motor().current_duty, 0);
+        assert!(car.right_motor().stopped);
+        assert_eq!(car.right_motor().current_duty, 0);
+    }
+
+    #[test]
+    fn test_car_control_recovery_from_failsafe() {
+        let left = MockMotor::new(2500);
+        let right = MockMotor::new(2500);
+        let mut car = CarControl::new(left, right);
+
+        let indicator_signal: Signal<CriticalSectionRawMutex, IndicatorState> = Signal::new();
+        let mut in_failsafe = true;
+
+        let cmd = DriveCommand {
+            left: 1200,
+            right: -1200,
+        };
+        let res = car.handle_command(cmd, &indicator_signal, &mut in_failsafe);
+
+        assert!(res.is_ok());
+        assert!(!in_failsafe);
+        assert!(indicator_signal.signaled());
+        assert_eq!(indicator_signal.try_take(), Some(IndicatorState::Connected));
+        assert_eq!(car.left_motor().current_duty, 1200);
+        assert_eq!(car.left_motor().current_direction, Direction::Forward);
+        assert_eq!(car.right_motor().current_duty, 1200);
+        assert_eq!(car.right_motor().current_direction, Direction::Reverse);
     }
 }
