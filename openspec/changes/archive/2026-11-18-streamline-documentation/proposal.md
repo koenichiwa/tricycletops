@@ -11,7 +11,7 @@ Documentation across `README.md`, `GEMINI.md`, and `openspec/` currently suffers
   - Fix the Control Protocol section to reflect the current BLE contract (`fff1` signed `i32` LE motor speeds, `fff2` `u16` LE duty limits).
   - Add explicit links pointing developers to `openspec/specs/remote-car-control/spec.md` for in-depth protocol and behavior specs.
   - Simplify repository structure representation to high-level modules only to prevent maintenance rot.
-  - Document host-based unit testing (`cargo test --lib --target x86_64-unknown-linux-gnu`) under Firmware Getting Started to highlight hardware-free testing for contributors.
+  - Document host-based unit testing (`cargo test --lib --target host-tuple`) under Firmware Getting Started to highlight hardware-free testing for contributors.
 - **Clean & Optimize `GEMINI.md`**:
   - Remove stale and granular source tree file listings (e.g., references to deleted `BleScannerManager.kt` and `BleDevice.kt`).
   - Retain essential, fast-lookup command cheatsheets and core coding conventions (`no_std`, `StaticCell`, defmt, StateFlow, Jetpack Compose).

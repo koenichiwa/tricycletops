@@ -4,7 +4,7 @@
 
 - [x] 1.1 Update the Control Protocol section in `README.md` to reflect the active BLE contract (`fff1` signed `i32` LE speeds, `fff2` `u16` LE duty limits) and add a direct link to `openspec/specs/remote-car-control/spec.md`. Verify table values match the canonical spec.
 - [x] 1.2 Simplify the repository directory structure in `README.md` to top-level modules (`tricycletops-fw/`, `tricycletops-app/`, `openspec/`) and verify it accurately reflects the workspace layout without brittle subfile paths.
-- [x] 1.3 Add host unit test instructions (`cargo test --lib --target x86_64-unknown-linux-gnu`) to the Firmware Getting Started section in `README.md`.
+- [x] 1.3 Add host unit test instructions (`cargo test --lib --target host-tuple`) to the Firmware Getting Started section in `README.md`.
 
 ## 2. Refine & Optimize GEMINI.md
 

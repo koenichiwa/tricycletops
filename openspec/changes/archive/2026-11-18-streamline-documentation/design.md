@@ -15,7 +15,7 @@ Because previous changes updated `openspec/specs/` and `GEMINI.md` without updat
 **Goals:**
 - Establish a strict documentation hierarchy with clear single sources of truth (SSOT).
 - Bring `README.md` into alignment with the existing firmware/app contract (`i32` LE speeds, `u16` LE duty limits) and link directly to canonical OpenSpec specifications.
-- Expose fast host-based firmware unit testing (`cargo test --lib --target x86_64-unknown-linux-gnu`) in `README.md` to facilitate testing without physical hardware.
+- Expose fast host-based firmware unit testing (`cargo test --lib --target host-tuple`) in `README.md` to facilitate testing without physical hardware.
 - Prune detailed, brittle source code file trees from `GEMINI.md` to prevent maintenance rot, instructing AI assistants to discover files via tooling.
 - Equip AI agents with an explicit workspace validation cheatsheet (`cargo fmt`, `cargo clippy`, `gradlew lint`, `pre-commit`) in `GEMINI.md`.
 - Optimize `GEMINI.md` token efficiency by condensing repetitive overview text into dense bullet facts.
@@ -54,7 +54,7 @@ Because previous changes updated `openspec/specs/` and `GEMINI.md` without updat
 - **Rationale**: Agents must rigorously validate changes before completing tasks. Listing project-specific linters in `GEMINI.md` ensures agents run them without prompting, while compressing the overview saves tokens on every turn.
 
 ### Decision 5: Expose Host Unit Testing in README.md
-- **Choice**: Include `cargo test --lib --target x86_64-unknown-linux-gnu` in `README.md` under Firmware Getting Started.
+- **Choice**: Include `cargo test --lib --target host-tuple` in `README.md` under Firmware Getting Started.
 - **Rationale**: Contributors might assume firmware requires physical RP2040 hardware to verify. Highlighting the host testing capability clarifies that protocol decoders and differential drive calculations can be tested instantly locally.
 
 ## Risks / Trade-offs
