@@ -14,6 +14,11 @@ The scanner SHALL filter discovered BLE peripherals and only surface devices who
 - **WHEN** a peripheral advertising the local name "Tricycletops" is detected
 - **THEN** the system SHALL add the device to the discovered list with its display name, MAC address, and RSSI
 
+#### Scenario: Matching device discovered by service UUID without local name
+- **GIVEN** BLE scanning is active
+- **WHEN** a peripheral advertising the Tricycletops GATT Service UUID is detected without an advertised local name
+- **THEN** the system SHALL add the device to the discovered list defaulting its display name to "Tricycletops"
+
 #### Scenario: Non-matching device ignored
 - **GIVEN** BLE scanning is active
 - **WHEN** a peripheral advertising an unrelated name and service is detected
@@ -46,13 +51,8 @@ The scanner SHALL verify Bluetooth adapter availability and runtime permissions 
 
 #### Scenario: Missing Bluetooth permissions
 - **GIVEN** Bluetooth permissions (BLUETOOTH_SCAN and BLUETOOTH_CONNECT) are not yet granted
-- **WHEN** scanning is requested or the scanner screen is presented
-- **THEN** the system SHALL request the required permissions from the user and start scanning once granted
-
-#### Scenario: Bluetooth permissions permanently denied
-- **GIVEN** Bluetooth permissions have been denied by the user
-- **WHEN** the scanner screen is presented or scan is triggered
-- **THEN** the system SHALL display an educational permission rationale and provide an action to open application system settings
+- **WHEN** the scanner screen is presented or scanning is requested
+- **THEN** the system SHALL request the required permissions from the user, display an educational permission rationale with an action to open application system settings, and automatically initiate scanning once permissions are granted
 
 #### Scenario: Permissions granted externally upon app resumption
 - **GIVEN** the application was backgrounded while permissions were missing
