@@ -2,7 +2,7 @@
 
 ## Why
 
-While `tricycletops-fw` was recently modularized, `CarControl`, `MotorControl`, and `indicator_task` remain tightly coupled to RP2040-specific hardware types (`embassy_rp::pwm::Pwm` and `embassy_rp::gpio::Output`), forcing them to be target-gated. As a result, core vehicle control logic, safety stops, and status patterns cannot be unit-tested on host machines (`cargo test`). Additionally, `indicator_task` contains complex nested `select` logic with an unused `Failsafe` state, and the BLE advertising loop crashes the MCU via `panic!` on transient radio errors. 
+While `tricycletops-fw` was recently modularized, `CarControl`, `MotorControl`, and `indicator_task` remain tightly coupled to RP2040-specific hardware types (`embassy_rp::pwm::Pwm` and `embassy_rp::gpio::Output`), forcing them to be target-gated. As a result, core vehicle control logic, safety stops, and status patterns cannot be unit-tested on host machines (`cargo test`). Additionally, `indicator_task` contains complex nested `select` logic with an unused `Failsafe` state, and the BLE advertising loop crashes the MCU via `panic!` on transient radio errors.
 
 Introducing a clean hardware abstraction layer (`Motor` trait), declarative blink patterns with active watchdog failsafe feedback, and a zero-panic BLE retry loop will make the firmware robust, maintainable, and 100% testable on developer hosts without altering the BLE GATT contract with the Android app.
 
