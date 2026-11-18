@@ -1,5 +1,19 @@
 schema: spec-driven
 
+operations:
+  apply:
+    guidance:
+      - Author a conventional commit after completing a task that introduces changes
+      - Check if the build compiles before committing code changes, and run relevant tests
+      - If code changes intentionally span multiple tasks to compile, defer committing until the dependent task passes; otherwise, fix failures before proceeding
+  archive:
+    guidance:
+      - Summarize the archive outcome before finishing
+      - Check if the build compiles and relevant tests pass before archiving a change
+      - After archiving, author a conventional commit (docs(openspec): archive <name>) containing a summary of the archive outcome
+
+
+
 # Project context (optional)
 # Add only constraints that should guide OpenSpec artifacts and workflows.
 # Include constraints an agent cannot infer by reading the code.
