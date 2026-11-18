@@ -13,6 +13,12 @@ pub struct DriveCommand {
     pub right: i32,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, defmt::Format)]
+pub enum CarCommand {
+    Drive(DriveCommand),
+    Disconnected,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CarControlError<L, R> {
     LeftMotor(L),
@@ -124,9 +130,17 @@ impl<L: Motor, R: Motor> CarControl<L, R> {
         indicator_signal.signal(crate::indicator::IndicatorState::Failsafe);
     }
 
+    pub fn handle_disconnect(
+        &mut self,
+        in_failsafe: &mut bool,
+    ) -> Result<(), CarControlError<L::Error, R::Error>> {
+        *in_failsafe = false;
+        self.stop()
+    }
+
     pub async fn run<M: RawMutex>(
         &mut self,
-        drive_command_signal: &'static Signal<M, DriveCommand>,
+        car_command_signal: &'static Signal<M, CarCommand>,
         indicator_signal: &'static Signal<M, crate::indicator::IndicatorState>,
     ) -> ! {
         const WATCHDOG_TIMEOUT: Duration = Duration::from_millis(500);
@@ -136,21 +150,29 @@ impl<L: Motor, R: Motor> CarControl<L, R> {
 
         loop {
             if !has_received_command {
-                let cmd = drive_command_signal.wait().await;
-                has_received_command = true;
-                info!(
-                    "Car control task: setting initial speeds left={}, right={}",
-                    cmd.left, cmd.right
-                );
-                if let Err(err) = self.handle_command(cmd, indicator_signal, &mut in_failsafe) {
-                    warn!(
-                        "Motor error setting speeds: {:?}",
-                        defmt::Debug2Format(&err)
-                    );
+                match car_command_signal.wait().await {
+                    CarCommand::Drive(cmd) => {
+                        has_received_command = true;
+                        info!(
+                            "Car control task: setting initial speeds left={}, right={}",
+                            cmd.left, cmd.right
+                        );
+                        if let Err(err) = self.handle_command(cmd, indicator_signal, &mut in_failsafe) {
+                            warn!(
+                                "Motor error setting speeds: {:?}",
+                                defmt::Debug2Format(&err)
+                            );
+                        }
+                    }
+                    CarCommand::Disconnected => {
+                        if let Err(err) = self.handle_disconnect(&mut in_failsafe) {
+                            warn!("Motor error during disconnect: {:?}", defmt::Debug2Format(&err));
+                        }
+                    }
                 }
             } else {
-                match with_timeout(WATCHDOG_TIMEOUT, drive_command_signal.wait()).await {
-                    Ok(cmd) => {
+                match with_timeout(WATCHDOG_TIMEOUT, car_command_signal.wait()).await {
+                    Ok(CarCommand::Drive(cmd)) => {
                         info!(
                             "Car control task: setting speeds left={}, right={}",
                             cmd.left, cmd.right
@@ -162,6 +184,12 @@ impl<L: Motor, R: Motor> CarControl<L, R> {
                                 "Motor error setting speeds: {:?}",
                                 defmt::Debug2Format(&err)
                             );
+                        }
+                    }
+                    Ok(CarCommand::Disconnected) => {
+                        has_received_command = false;
+                        if let Err(err) = self.handle_disconnect(&mut in_failsafe) {
+                            warn!("Motor error during disconnect: {:?}", defmt::Debug2Format(&err));
                         }
                     }
                     Err(_) => {
@@ -349,6 +377,21 @@ mod tests {
         assert_eq!(car.left_motor().current_duty, 0);
         assert!(car.right_motor().stopped);
         assert_eq!(car.right_motor().current_duty, 0);
+    }
+
+    #[test]
+    fn test_car_control_handle_disconnect() {
+        let left = MockMotor::new(2500);
+        let right = MockMotor::new(2500);
+        let mut car = CarControl::new(left, right);
+
+        let mut in_failsafe = true;
+        let res = car.handle_disconnect(&mut in_failsafe);
+
+        assert!(res.is_ok());
+        assert!(!in_failsafe);
+        assert!(car.left_motor().stopped);
+        assert!(car.right_motor().stopped);
     }
 
     #[test]

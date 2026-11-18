@@ -20,6 +20,11 @@ The firmware SHALL enforce an autonomous 500ms watchdog timeout while connected.
 - **WHEN** a valid drive command is received on characteristic `fff1`
 - **THEN** the firmware SHALL actuate the motors according to the new command and clear the failsafe state
 
+#### Scenario: Disconnection halts motors and disarms watchdog
+- **GIVEN** an active BLE connection with motors running or peripheral in failsafe
+- **WHEN** the central disconnects or the link is terminated
+- **THEN** the firmware SHALL immediately halt both wheel motors, disarm the 500ms command watchdog, and SHALL NOT trigger failsafe state while disconnected
+
 ### Requirement: Peripheral Operational State Indication
 The peripheral SHALL drive the status indicator LED to reflect its current operational state: 1Hz blinking (500ms ON / 500ms OFF) when advertising, solid ON when connected and actively controlled, and 5Hz rapid blinking (100ms ON / 100ms OFF) when in failsafe halt.
 
@@ -41,4 +46,4 @@ The peripheral SHALL drive the status indicator LED to reflect its current opera
 #### Scenario: Disconnection transitions back to advertising
 - **GIVEN** the peripheral is connected or in failsafe
 - **WHEN** the central disconnects or the link is terminated
-- **THEN** the status LED SHALL immediately return to the 1Hz advertising blink pattern
+- **THEN** the status LED SHALL immediately return to the 1Hz advertising blink pattern and SHALL NOT transition to failsafe or solid connected while waiting for reconnection

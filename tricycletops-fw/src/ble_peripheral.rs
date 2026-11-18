@@ -5,7 +5,7 @@ use embassy_sync::signal::Signal;
 use embassy_time::Timer;
 use trouble_host::prelude::*;
 
-use crate::car_control::DriveCommand;
+use crate::car_control::CarCommand;
 use crate::indicator::IndicatorState;
 use crate::protocol::{DutyLimits, decode_drive_command, encode_drive_command, encode_duty_limits};
 
@@ -33,7 +33,7 @@ struct CarService {
 /// Run the BLE stack.
 pub async fn run<C>(
     controller: C,
-    command_signal: &'static Signal<ThreadModeRawMutex, DriveCommand>,
+    command_signal: &'static Signal<ThreadModeRawMutex, CarCommand>,
     indicator_signal: &'static Signal<ThreadModeRawMutex, IndicatorState>,
     duty_limits: DutyLimits,
 ) where
@@ -107,7 +107,7 @@ async fn ble_task<C: Controller, P: PacketPool>(mut runner: Runner<'_, C, P>) {
 async fn gatt_events_task<P: PacketPool>(
     server: &Server<'_>,
     conn: &GattConnection<'_, '_, P>,
-    command_signal: &'static Signal<ThreadModeRawMutex, DriveCommand>,
+    command_signal: &'static Signal<ThreadModeRawMutex, CarCommand>,
     indicator_signal: &'static Signal<ThreadModeRawMutex, IndicatorState>,
     duty_limits: DutyLimits,
 ) -> Result<(), Error> {
@@ -121,7 +121,7 @@ async fn gatt_events_task<P: PacketPool>(
         match conn.next().await {
             GattConnectionEvent::Disconnected { reason } => {
                 // Immediately halt motors on disconnect
-                command_signal.signal(DriveCommand { left: 0, right: 0 });
+                command_signal.signal(CarCommand::Disconnected);
                 indicator_signal.signal(IndicatorState::Advertising);
                 break reason;
             }
@@ -137,7 +137,7 @@ async fn gatt_events_task<P: PacketPool>(
 
                     if let Some(command) = command {
                         conn.set(&drive_command_char, &encode_drive_command(command))?;
-                        command_signal.signal(command);
+                        command_signal.signal(CarCommand::Drive(command));
                     }
                 }
                 let reply = event.accept();

@@ -10,11 +10,11 @@ use panic_probe as _;
 
 use tricycletops_fw::ble_peripheral;
 use tricycletops_fw::board::{self, Board};
-use tricycletops_fw::car_control::{CarControl, DriveCommand, TargetCarControl};
+use tricycletops_fw::car_control::{CarCommand, CarControl, TargetCarControl};
 use tricycletops_fw::indicator::{self, IndicatorState};
 
 // Signals
-static CAR_COMMAND_SIGNAL: Signal<ThreadModeRawMutex, DriveCommand> = Signal::new();
+static CAR_COMMAND_SIGNAL: Signal<ThreadModeRawMutex, CarCommand> = Signal::new();
 static INDICATOR_SIGNAL: Signal<ThreadModeRawMutex, IndicatorState> = Signal::new();
 
 #[embassy_executor::task]

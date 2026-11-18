@@ -117,7 +117,7 @@ Pass `indicator_signal: &'static Signal<ThreadModeRawMutex, IndicatorState>` int
 - On `with_timeout` elapsed: halt motors and call `indicator_signal.signal(IndicatorState::Failsafe)`.
 - On `PwmError` or motor failure: halt motors and call `indicator_signal.signal(IndicatorState::Failsafe)`.
 - On receiving a valid drive command: if previously in failsafe, set speeds and call `indicator_signal.signal(IndicatorState::Connected)`.
-- On BLE disconnect in `ble_peripheral`: immediately signal stop `(0, 0)` and `IndicatorState::Advertising`.
+- On BLE disconnect in `ble_peripheral`: signal `CarCommand::Disconnected` to `CarControl` and `IndicatorState::Advertising` to indicator.
 
 *Rationale*: Eliminates the dead `Failsafe` state and provides clear visual feedback on the physical robot when BLE communication stalls.
 
@@ -134,11 +134,29 @@ Err(e) => {
 
 *Rationale*: Transient packet collisions or client aborts during connection negotiation will not crash or restart the RP2040.
 
+### 6. Disconnection Command & Watchdog Disarming
+
+Define an explicit `CarCommand` enum:
+
+```rust
+#[derive(Clone, Copy, Debug, PartialEq, Eq, defmt::Format)]
+pub enum CarCommand {
+    Drive(DriveCommand),
+    Disconnected,
+}
+```
+
+In `CarControl::run`:
+- `CarCommand::Drive(cmd)`: Execute `handle_command(cmd)`. If recovering from failsafe, transition to `IndicatorState::Connected`. Arm the 500ms watchdog for subsequent commands.
+- `CarCommand::Disconnected`: Halt motors (`self.stop()`), reset `in_failsafe = false`, disarm the 500ms command timeout watchdog, and do not signal `indicator_signal` (allowing `ble_peripheral`'s `Advertising` state to persist). Await the next command without running the watchdog.
+
+*Rationale*: Distinguishing disconnect events from zero-speed drive commands prevents the 500ms watchdog from firing while disconnected and advertising.
+
 ## Risks / Trade-offs
 
 - **[Risk] State Signal Overwrites between BLE and CarControl**:
-  `Signal` holds only the latest state. If `ble_peripheral` signals `Connected` and `CarControl` simultaneously signals `Failsafe` due to initial watchdog timeout before first command:
-  → *Mitigation*: `CarControl` only trips watchdog after the first command has been received or stays in initial idle until commanded, preventing spurious failsafe transitions during initial connection.
+  `Signal` holds only the latest state. If `ble_peripheral` signals `Connected` and `CarControl` simultaneously signals `Failsafe`, or if `CarControl` signals `Connected` on a disconnect stop command:
+  → *Mitigation*: `CarControl` only arms the watchdog while actively connected and receiving commands. On `CarCommand::Disconnected`, `CarControl` immediately disarms the watchdog, halts motors, and clears failsafe state without emitting an indicator signal, guaranteeing `ble_peripheral`'s `IndicatorState::Advertising` remains active.
 - **[Risk] Monomorphization Code Size**:
   `CarControl<L, R>` uses generic types.
   → *Mitigation*: Both wheels use identical `MotorControl<'static>` instances on target hardware, so only a single concrete instance is compiled into flash.

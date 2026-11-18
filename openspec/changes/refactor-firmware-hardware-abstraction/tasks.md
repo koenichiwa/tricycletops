@@ -24,3 +24,9 @@
 
 - [x] 5.1 Execute all host unit tests (`cargo test --lib --target host-tuple`) to ensure 100% test pass rate across protocol, kinematics, and indicator modules.
 - [x] 5.2 Run firmware formatting and clippy (`cargo fmt --check` and `cargo clippy --target thumbv6m-none-eabi`), verifying zero errors or warnings.
+
+## 6. Disconnection Watchdog Disarming & Failsafe Resilience
+
+- [x] 6.1 Introduce `CarCommand` enum (`Drive(DriveCommand)`, `Disconnected`) and `handle_disconnect` in `src/car_control.rs`, disarming the 500ms command timeout watchdog and clearing failsafe state on disconnect without indicator clobbering, verified by host unit tests (`cargo test --lib --target host-tuple`).
+- [x] 6.2 Update `src/ble_peripheral.rs` to signal `CarCommand::Disconnected` on link termination, and update signal types in `src/main.rs`, verifying target compilation (`cargo check --target thumbv6m-none-eabi`).
+- [ ] 6.3 Execute full host unit test suite, target release build, and workspace pre-commit checks (`cargo test --lib --target host-tuple`, `cargo build --release --target thumbv6m-none-eabi`, and `pre-commit run --all-files`).

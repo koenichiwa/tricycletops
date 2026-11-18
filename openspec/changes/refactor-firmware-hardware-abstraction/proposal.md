@@ -12,6 +12,7 @@ Introducing a clean hardware abstraction layer (`Motor` trait), declarative blin
 - **Target-Agnostic `MotorControl`**: Implement the `Motor` trait on a generic H-bridge controller that drives any PWM and digital output pins, confining RP2040-specific pin bindings entirely to `board.rs`.
 - **Declarative Indicator State Machine**: Replace nested `select` branching in `indicator.rs` with declarative `BlinkPattern` timings (500ms on/off for Advertising, Solid ON for Connected, 100ms on/off for Failsafe) and an interruptible phase stepper.
 - **Active Failsafe Diagnostics**: Wire the `CarControl` 500ms watchdog timeout and motor actuator errors to signal `IndicatorState::Failsafe`, providing immediate physical LED feedback when communication stalls.
+- **Disconnection Handling & Watchdog Disarming**: Introduce a `CarCommand` enum distinguishing drive commands from disconnection events. On disconnect, `CarControl` immediately halts motors, disarms the 500ms command timeout watchdog, and clears failsafe state without clobbering the advertising LED indicator.
 - **Zero-Panic BLE Peripheral Lifecycle**: Replace `panic!` calls in `ble_peripheral.rs` during advertisement or connection failures with structured logging and async retry backoff.
 - **Comprehensive Host Unit Test Suite**: Add host unit tests for `CarControl` kinematics, deadband handling, watchdog transitions, and motor fault tolerance using `cargo test --lib`.
 
@@ -27,9 +28,9 @@ Introducing a clean hardware abstraction layer (`Motor` trait), declarative blin
 
 - **Firmware (`tricycletops-fw`)**:
   - `src/motor_control.rs`: Exposes `Motor` trait, generic H-bridge implementation, and `MockMotor`.
-  - `src/car_control.rs`: Decoupled from RP2040 types; implements portable domain control and watchdog failsafe signaling.
+  - `src/car_control.rs`: Decoupled from RP2040 types; implements portable domain control, watchdog failsafe signaling, and disconnection watchdog disarming.
   - `src/indicator.rs`: Replaced with declarative `BlinkPattern` state machine.
-  - `src/ble_peripheral.rs`: Hardened against transient advertising and disconnect errors without panicking.
+  - `src/ble_peripheral.rs`: Hardened against transient advertising and disconnect errors; emits `CarCommand::Disconnected` on link termination.
   - `src/board.rs`: Instantiates concrete RP2040 `MotorControl` instances for `CarControl`.
   - `src/lib.rs` & `src/main.rs`: Updates task signatures and dependency wiring.
 - **Android App (`tricycletops-app`)**: No impact. The GATT service UUID (`fff0`), drive characteristic (`fff1`), duty limits characteristic (`fff2`), and little-endian wire protocols remain 100% unchanged.
