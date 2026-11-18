@@ -106,3 +106,63 @@ pub fn split_speed(speed: i32, max_duty: u16) -> (u16, Direction) {
         (clamped.unsigned_abs() as u16, Direction::Reverse)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_split_speed_zero() {
+        let (duty, dir) = split_speed(0, 2500);
+        assert_eq!(duty, 0);
+        assert_eq!(dir, Direction::Forward);
+    }
+
+    #[test]
+    fn test_split_speed_forward() {
+        let (duty, dir) = split_speed(1500, 2500);
+        assert_eq!(duty, 1500);
+        assert_eq!(dir, Direction::Forward);
+    }
+
+    #[test]
+    fn test_split_speed_reverse() {
+        let (duty, dir) = split_speed(-1500, 2500);
+        assert_eq!(duty, 1500);
+        assert_eq!(dir, Direction::Reverse);
+    }
+
+    #[test]
+    fn test_split_speed_clamping_positive() {
+        let (duty, dir) = split_speed(5000, 2500);
+        assert_eq!(duty, 2500);
+        assert_eq!(dir, Direction::Forward);
+
+        let (duty, dir) = split_speed(i32::MAX, 2500);
+        assert_eq!(duty, 2500);
+        assert_eq!(dir, Direction::Forward);
+    }
+
+    #[test]
+    fn test_split_speed_clamping_negative() {
+        let (duty, dir) = split_speed(-5000, 2500);
+        assert_eq!(duty, 2500);
+        assert_eq!(dir, Direction::Reverse);
+
+        let (duty, dir) = split_speed(i32::MIN, 2500);
+        assert_eq!(duty, 2500);
+        assert_eq!(dir, Direction::Reverse);
+    }
+
+    #[test]
+    fn test_split_speed_boundary_exact_max() {
+        let (duty, dir) = split_speed(2500, 2500);
+        assert_eq!(duty, 2500);
+        assert_eq!(dir, Direction::Forward);
+
+        let (duty, dir) = split_speed(-2500, 2500);
+        assert_eq!(duty, 2500);
+        assert_eq!(dir, Direction::Reverse);
+    }
+}
+
