@@ -15,13 +15,17 @@ Because previous changes updated `openspec/specs/` and `GEMINI.md` without updat
 **Goals:**
 - Establish a strict documentation hierarchy with clear single sources of truth (SSOT).
 - Bring `README.md` into alignment with the existing firmware/app contract (`i32` LE speeds, `u16` LE duty limits) and link directly to canonical OpenSpec specifications.
+- Expose fast host-based firmware unit testing (`cargo test --lib --target x86_64-unknown-linux-gnu`) in `README.md` to facilitate testing without physical hardware.
 - Prune detailed, brittle source code file trees from `GEMINI.md` to prevent maintenance rot, instructing AI assistants to discover files via tooling.
+- Equip AI agents with an explicit workspace validation cheatsheet (`cargo fmt`, `cargo clippy`, `gradlew lint`, `pre-commit`) in `GEMINI.md`.
+- Optimize `GEMINI.md` token efficiency by condensing repetitive overview text into dense bullet facts.
 - Add operational guidance in `openspec/config.yaml` ensuring documentation synchronization is maintained across changes.
 
 **Non-Goals:**
 - No changes to application or firmware source code or compiled binaries.
 - No introduction of complex external documentation generation systems (e.g. mdBook, Doxygen).
-- No removal of essential AI validation commands or embedded development conventions from `GEMINI.md`.
+- Hardware wiring documentation and diagrams are deferred to a separate dedicated hardware ticket.
+- Human `README.md` will not include code quality/linter setup to keep human onboarding minimal and uncluttered.
 
 ## Decisions
 
@@ -44,6 +48,14 @@ Because previous changes updated `openspec/specs/` and `GEMINI.md` without updat
 ### Decision 3: Embed Documentation Synchronization Guidance in `openspec/config.yaml`
 - **Choice**: Add advisory guidance under `operations.apply` and `operations.archive` in `openspec/config.yaml`.
 - **Rationale**: When agents or developers work through OpenSpec tasks, the instructions injected from `openspec/config.yaml` will actively remind them to keep `README.md` and `GEMINI.md` synchronized whenever protocol contracts change.
+
+### Decision 4: AI Agent Workspace Validation Cheatsheet & Context Compression
+- **Choice**: Add standard validation commands (`cargo fmt`, `cargo clippy`, `gradlew lint`, `pre-commit`) to `GEMINI.md` and compress repetitive overview text into dense factual bullet points.
+- **Rationale**: Agents must rigorously validate changes before completing tasks. Listing project-specific linters in `GEMINI.md` ensures agents run them without prompting, while compressing the overview saves tokens on every turn.
+
+### Decision 5: Expose Host Unit Testing in README.md
+- **Choice**: Include `cargo test --lib --target x86_64-unknown-linux-gnu` in `README.md` under Firmware Getting Started.
+- **Rationale**: Contributors might assume firmware requires physical RP2040 hardware to verify. Highlighting the host testing capability clarifies that protocol decoders and differential drive calculations can be tested instantly locally.
 
 ## Risks / Trade-offs
 

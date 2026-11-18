@@ -11,10 +11,13 @@ Documentation across `README.md`, `GEMINI.md`, and `openspec/` currently suffers
   - Fix the Control Protocol section to reflect the current BLE contract (`fff1` signed `i32` LE motor speeds, `fff2` `u16` LE duty limits).
   - Add explicit links pointing developers to `openspec/specs/remote-car-control/spec.md` for in-depth protocol and behavior specs.
   - Simplify repository structure representation to high-level modules only to prevent maintenance rot.
-- **Clean `GEMINI.md`**:
+  - Document host-based unit testing (`cargo test --lib --target x86_64-unknown-linux-gnu`) under Firmware Getting Started to highlight hardware-free testing for contributors.
+- **Clean & Optimize `GEMINI.md`**:
   - Remove stale and granular source tree file listings (e.g., references to deleted `BleScannerManager.kt` and `BleDevice.kt`).
   - Retain essential, fast-lookup command cheatsheets and core coding conventions (`no_std`, `StaticCell`, defmt, StateFlow, Jetpack Compose).
   - Add explicit guidance instructing AI assistants to treat `openspec/specs/` as the definitive behavioral specification.
+  - Add an agent validation commands cheatsheet (`cargo fmt`, `cargo clippy`, `./gradlew lint`, `pre-commit`) to ensure agent changes satisfy workspace linters and git hooks.
+  - Condense repetitive overview text into high-signal bullet points to save context window tokens on every conversation turn.
 - **Workflow & Sync Guidance in `openspec/config.yaml`**:
   - Add guidance under operations (`apply`/`archive`) reminding developers and agents to maintain consistency between specs, `README.md`, and `GEMINI.md` when contracts change.
 

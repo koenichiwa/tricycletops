@@ -53,13 +53,18 @@ To compile and run the Android app:
     ```bash
     cargo check --target thumbv6m-none-eabi
     ```
-3.  **Build the binary**:
+3.  **Run host unit tests**:
+    Execute fast unit tests on your host machine without physical hardware:
+    ```bash
+    cargo test --lib --target x86_64-unknown-linux-gnu
+    ```
+4.  **Build the binary**:
     Compile the release-optimized binary:
     ```bash
     cargo build --release --target thumbv6m-none-eabi
     ```
     *Note: The compilation automatically downloads the necessary Cyw43 Wi-Fi/Bluetooth firmware binaries into `target/cyw43-firmware/` via `build.rs`.*
-4.  **Flash the RP2040 / Pi Pico W**:
+5.  **Flash the RP2040 / Pi Pico W**:
     *   **Using Picotool (USB)**: Put your Pico W into BOOTSEL mode by holding the `BOOTSEL` button while plugging in the USB cable. Then run:
         ```bash
         cargo run

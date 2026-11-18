@@ -1,32 +1,18 @@
-# Tricycletops AI Assistant Instructions (`GEMINI.md`)
+# Tricycletops AI Instructions (`GEMINI.md`)
 
-This document serves as the primary instructional context and reference for AI assistants working in this repository. It defines the workspace structure, building/running commands, protocol specifications, and development conventions.
+## 🦖 Overview & Structure
 
----
-
-## 🦖 Project Overview
-
-**Tricycletops** is a hobby robotics project comprising a 3-wheeled, dual-motor differential drive robotic car controlled over Bluetooth Low Energy (BLE).
-
-The project is split into two main components:
-1. **`tricycletops-fw`**: An asynchronous, bare-metal (`no_std`) Rust firmware for the RP2040 micro-controller (on a Raspberry Pi Pico W), implementing the BLE peripheral stack and motor PWM control.
-2. **`tricycletops-app`**: A Kotlin Jetpack Compose Android app acting as a BLE remote controller (scanning, connecting, and sending joystick steering commands).
-
----
-
-## 📂 Repository Structure
-
-The workspace is divided into three high-level boundaries:
-
-1. **`tricycletops-fw/`**: Async Rust Firmware (Embassy & trouble-host)
-2. **`tricycletops-app/`**: Kotlin Android Application (Jetpack Compose)
-3. **`openspec/`**: OpenSpec specifications and documentation workflows
-
-> 🤖 **Agent Instruction**: Do not rely on hardcoded file paths in this file. The repository structure is actively refactored. Always use `glob` and `grep_search` to dynamically discover files (e.g., searching for GATT scanning logic, UI components, or motor control implementations).
+* **System**: 3-wheeled differential drive robotic car controlled over BLE.
+* **`tricycletops-fw/`**: Async bare-metal (`no_std`) Rust on RP2040 (Raspberry Pi Pico W) with Embassy and `trouble-host`.
+* **`tricycletops-app/`**: Kotlin Android Jetpack Compose remote controller.
+* **`openspec/`**: Authoritative OpenSpec protocol and behavioral specifications.
+* **Dynamic File Discovery**: Do not rely on static file trees. Use `glob` and `grep_search` to discover files dynamically across modules.
 
 ---
 
 ## 📡 BLE Control Specification
+
+> 📖 **Authoritative Specification**: [`openspec/specs/remote-car-control/spec.md`](openspec/specs/remote-car-control/spec.md) is the single definitive source of truth for BLE protocols, packet codecs, differential drive kinematics, deadband handling, throttling (25Hz), and safety behaviors. The tables below serve only as a concise lookup reference.
 
 The firmware implements a GATT peripheral advertising the local name `Tricycletops` with a specific control service.
 
@@ -98,6 +84,27 @@ All app commands must be run inside the `tricycletops-app/` directory:
   ```
 * **Install and Deploy**:
   Open the project in **Android Studio**, connect a physical Android device (with USB debugging enabled) or emulator, and click the **Run 'app'** button (`Shift + F10`).
+
+### 🧹 Workspace Validation & Linters
+
+Run these checks before finalizing changes to ensure CI and pre-commit hooks pass:
+
+* **Format Firmware**:
+  ```bash
+  cd tricycletops-fw && cargo fmt
+  ```
+* **Clippy / Linter (Firmware)**:
+  ```bash
+  cd tricycletops-fw && cargo clippy --target thumbv6m-none-eabi
+  ```
+* **Lint Android App**:
+  ```bash
+  cd tricycletops-app && ./gradlew lint
+  ```
+* **Run Pre-Commit Hooks**:
+  ```bash
+  pre-commit run --all-files
+  ```
 
 ---
 
