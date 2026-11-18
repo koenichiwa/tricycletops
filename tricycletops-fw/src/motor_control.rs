@@ -4,16 +4,11 @@ use embassy_rp::{
     pwm::{Pwm, PwmError, SetDutyCycle},
 };
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, defmt::Format)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, defmt::Format)]
 pub enum Direction {
+    #[default]
     Forward,
     Reverse,
-}
-
-impl Default for Direction {
-    fn default() -> Self {
-        Self::Forward
-    }
 }
 
 pub trait Motor {

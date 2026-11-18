@@ -22,5 +22,5 @@
 
 ## 5. Full Validation & Verification
 
-- [ ] 5.1 Execute all host unit tests (`cargo test --lib --target host-tuple`) to ensure 100% test pass rate across protocol, kinematics, and indicator modules.
-- [ ] 5.2 Run firmware formatting and clippy (`cargo fmt --check` and `cargo clippy --target thumbv6m-none-eabi`), verifying zero errors or warnings.
+- [x] 5.1 Execute all host unit tests (`cargo test --lib --target host-tuple`) to ensure 100% test pass rate across protocol, kinematics, and indicator modules.
+- [x] 5.2 Run firmware formatting and clippy (`cargo fmt --check` and `cargo clippy --target thumbv6m-none-eabi`), verifying zero errors or warnings.
