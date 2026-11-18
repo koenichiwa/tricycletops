@@ -9,7 +9,7 @@
 
 - [x] 2.1 Implement `src/protocol.rs` with byte codecs (`decode_drive_command`, `encode_drive_command`, `encode_duty_limits`) and verify unit tests pass on host via `cargo test --lib -- protocol`
 - [x] 2.2 Refactor speed splitting and clamping in `src/car_control.rs` into testable pure functions and verify unit tests pass on host via `cargo test --lib -- car_control`
-- [x] 2.3 Implement `src/indicator.rs` defining `PeripheralState` and `indicator_task` with state-specific LED patterns (advertising blink, connected solid, failsafe flash) and verify compilation
+- [x] 2.3 Implement `src/indicator.rs` defining `IndicatorState` and `indicator_task` with state-specific LED patterns (advertising blink, connected solid, failsafe flash) and verify compilation
 
 ## 3. Board Support Package & Driver Decoupling
 
@@ -19,7 +19,7 @@
 ## 4. Safety Watchdog & Failsafe Implementation
 
 - [x] 4.1 Implement autonomous 500ms command timeout watchdog and non-terminating error recovery loop in `CarControl::run` in `src/car_control.rs`
-- [x] 4.2 Update `src/ble_peripheral.rs` to use `protocol.rs`, dispatch explicit zero-speed stop commands upon GATT disconnection, and publish `PeripheralState` updates to the indicator
+- [x] 4.2 Update `src/ble_peripheral.rs` to use `protocol.rs`, dispatch explicit zero-speed stop commands upon GATT disconnection, and publish `IndicatorState` updates to the indicator
 
 ## 5. System Orchestration & Final Verification
 

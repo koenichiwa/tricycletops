@@ -133,7 +133,7 @@ Move `decode_drive_command`, `encode_drive_command`, and `encode_duty_limits` to
 
 ### 5. Status Indication Decoupling (`indicator.rs`)
 
-Extract LED blinking into an `indicator_task` listening to a `Signal<ThreadModeRawMutex, PeripheralState>` or shared state:
+Extract LED blinking into an `indicator_task` listening to a `Signal<ThreadModeRawMutex, IndicatorState>` or shared state:
 - `Advertising`: Blinking pattern (e.g. 500ms on, 500ms off)
 - `Connected`: Solid on
 - `Disconnected` / `Failsafe`: Rapid blink or return to advertising pattern

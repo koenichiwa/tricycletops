@@ -133,7 +133,7 @@ Run these checks before finalizing changes to ensure CI and pre-commit hooks pas
    - Never print to `stdout`/`stderr` using standard macros. Always use `defmt::info!`, `defmt::debug!`, `defmt::warn!`, or `defmt::error!`.
 8. **Status Indication & BLE Handling**:
    - The BLE peripheral runs via `trouble-host` stack inside `ble_peripheral::run()`.
-   - `indicator::indicator_task` drives the onboard status LED (PIN_15) based on `PeripheralState` signals:
+   - `indicator::indicator_task` drives the onboard status LED (PIN_15) based on `IndicatorState` signals:
      - `Advertising`: 500ms on / 500ms off blinking.
      - `Connected`: Solid ON.
      - `Disconnected`: Rapid flash (100ms on / 100ms off) before returning to advertising.

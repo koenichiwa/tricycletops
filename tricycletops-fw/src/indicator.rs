@@ -16,8 +16,6 @@ pub enum IndicatorState {
     Failsafe,
 }
 
-pub type PeripheralState = IndicatorState;
-
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct BlinkPattern {
     pub on_ms: u32,
