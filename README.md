@@ -11,15 +11,8 @@ Tricycletops is a Bluetooth Low Energy (BLE) controlled robotics/car platform co
 ```
 tricycletops/
 ├── tricycletops-fw/          # Async Rust Firmware (Embassy & trouble-host)
-│   ├── src/                  # Firmware source code (motors, BLE peripheral, main)
-│   ├── .cargo/               # Embedded targets and build configurations
-│   ├── memory.x              # RP2040 memory map
-│   └── Cargo.toml            # Rust cargo manifest
-│
-└── tricycletops-app/         # Kotlin Android Application (Jetpack Compose)
-    ├── app/                  # Android application module source & configs
-    ├── gradle/               # Declarative Gradle version catalogs
-    └── build.gradle.kts      # Project-level build script
+├── tricycletops-app/         # Kotlin Android Application (Jetpack Compose)
+└── openspec/                 # OpenSpec specifications and documentation workflows
 ```
 
 ---
@@ -103,18 +96,32 @@ To compile and run the Android app:
 
 When the firmware boots, the Raspberry Pi Pico W acts as a Bluetooth Low Energy (BLE) peripheral:
 
-*   **Advertised Name**: `TricycleTops`
-*   **GATT Service UUID**: `fff0` (represented as `[0xf0, 0xff]` in advertising packets)
-*   **Characteristic UUID**: `fff1` (Read / Write, 8-byte payload)
+*   **Advertised Name**: `Tricycletops` (case-insensitive checks recommended)
+*   **GATT Service UUID**: `fff0` (`0000fff0-0000-1000-8000-00805f9b34fb`)
+*   **Drive Characteristic UUID**: `fff1` (`0000fff1-0000-1000-8000-00805f9b34fb`, Read / Write, 8-byte payload)
+*   **Duty Limits Characteristic UUID**: `fff2` (`0000fff2-0000-1000-8000-00805f9b34fb`, Read, 8-byte payload)
 
-### Drive Command Structure
+> 📖 **Authoritative Specification**: The single source of truth for BLE protocols, packet codecs, differential drive kinematics, deadband handling, throttling (25Hz), and safety failsafes is defined in [`openspec/specs/remote-car-control/spec.md`](openspec/specs/remote-car-control/spec.md).
 
-To steer and move the Tricycletops car, write an 8-byte payload to characteristic `fff1` containing two **little-endian 32-bit floats** (`f32`):
+### Drive Command Payload (8 Bytes - Characteristic `fff1`)
 
-| Byte Range | Type  | Value Range     | Description |
+To steer and move the Tricycletops car, write an 8-byte payload to characteristic `fff1` containing **two 32-bit signed integers (`i32`) in little-endian format**:
+
+| Byte Offset | Data Type | Value Range | Description |
 |---|---|---|---|
-| **0 to 3** | `f32` (little-endian) | `-1.0` to `1.0` | **Left Motor Speed** (Positive = Forward, Negative = Reverse, `0.0` = Stop) |
-| **4 to 7** | `f32` (little-endian) | `-1.0` to `1.0` | **Right Motor Speed** (Positive = Forward, Negative = Reverse, `0.0` = Stop) |
+| **0 to 3** | `i32` (LE) | `-Left Max Duty` to `Left Max Duty` | **Left Motor Speed** (Positive = Forward, Negative = Reverse, `0` = Stop) |
+| **4 to 7** | `i32` (LE) | `-Right Max Duty` to `Right Max Duty` | **Right Motor Speed** (Positive = Forward, Negative = Reverse, `0` = Stop) |
+
+### Duty Limits Payload (8 Bytes - Characteristic `fff2`)
+
+Characteristic `fff2` exposes the minimum (deadband) and maximum PWM duty cycle limits configured on the microcontroller. Central clients read this 8-byte payload containing **four 16-bit unsigned integers (`u16`) in little-endian format**:
+
+| Byte Offset | Data Type | Description |
+|---|---|---|
+| **0 to 1** | `u16` (LE) | **Left Motor Minimum Duty Cycle Limit** |
+| **2 to 3** | `u16` (LE) | **Left Motor Maximum Duty Cycle Limit** |
+| **4 to 5** | `u16` (LE) | **Right Motor Minimum Duty Cycle Limit** |
+| **6 to 7** | `u16` (LE) | **Right Motor Maximum Duty Cycle Limit** |
 
 ---
 
