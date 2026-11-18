@@ -11,9 +11,11 @@ use panic_probe as _;
 use tricycletops_fw::ble_peripheral;
 use tricycletops_fw::board::{self, Board};
 use tricycletops_fw::car_control::{CarControl, DriveCommand};
+use tricycletops_fw::indicator::{self, PeripheralState};
 
-// Bounded MPMC channel with a capacity of 1 message
+// Signals
 static CAR_COMMAND_SIGNAL: Signal<ThreadModeRawMutex, DriveCommand> = Signal::new();
+static INDICATOR_SIGNAL: Signal<ThreadModeRawMutex, PeripheralState> = Signal::new();
 
 #[embassy_executor::task]
 async fn car_control_task(mut car: CarControl<'static>) -> ! {
@@ -26,6 +28,7 @@ async fn main(spawner: Spawner) {
     let board = Board::init().await;
 
     spawner.spawn(board::cyw43_task(board.cyw43_runner).unwrap());
+    spawner.spawn(indicator::indicator_task(board.led_pin, &INDICATOR_SIGNAL).unwrap());
 
     let car = CarControl::new(board.left_motor, board.right_motor);
     let duty_limits = car.duty_limits();
@@ -35,7 +38,7 @@ async fn main(spawner: Spawner) {
     ble_peripheral::run(
         board.ble_controller,
         &CAR_COMMAND_SIGNAL,
-        board.led_pin,
+        &INDICATOR_SIGNAL,
         duty_limits,
     )
     .await;

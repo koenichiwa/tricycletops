@@ -1,12 +1,12 @@
 use defmt::{info, warn};
 use embassy_futures::join::join;
-use embassy_rp::gpio::Output;
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::signal::Signal;
-use embassy_time::Timer;
 use trouble_host::prelude::*;
 
 use crate::car_control::DriveCommand;
+use crate::indicator::PeripheralState;
+use crate::protocol::{DutyLimits, decode_drive_command, encode_drive_command, encode_duty_limits};
 
 /// Max number of connections
 const CONNECTIONS_MAX: usize = 1;
@@ -33,8 +33,8 @@ struct CarService {
 pub async fn run<C>(
     controller: C,
     command_signal: &'static Signal<ThreadModeRawMutex, DriveCommand>,
-    led_pin: Output<'static>,
-    duty_limits: ((u16, u16), (u16, u16)),
+    indicator_signal: &'static Signal<ThreadModeRawMutex, PeripheralState>,
+    duty_limits: DutyLimits,
 ) where
     C: Controller,
 {
@@ -58,14 +58,20 @@ pub async fn run<C>(
     }))
     .unwrap();
 
-    let led_toggle = blink(led_pin);
-
-    let ble_stack = join(ble_task(runner), async {
+    let _ = join(ble_task(runner), async {
         loop {
+            indicator_signal.signal(PeripheralState::Advertising);
             match advertise("Tricycletops", &mut peripheral, &server).await {
                 Ok(conn) => {
-                    // set up tasks when the connection is established to a central, so they don't run when no one is connected.
-                    let _ = gatt_events_task(&server, &conn, command_signal, duty_limits).await;
+                    indicator_signal.signal(PeripheralState::Connected);
+                    let _ = gatt_events_task(
+                        &server,
+                        &conn,
+                        command_signal,
+                        indicator_signal,
+                        duty_limits,
+                    )
+                    .await;
                 }
                 Err(e) => {
                     let e = defmt::Debug2Format(&e);
@@ -73,9 +79,8 @@ pub async fn run<C>(
                 }
             }
         }
-    });
-
-    let _ = join(led_toggle, ble_stack).await;
+    })
+    .await;
 }
 
 /// This is a background task that is required to run forever alongside any other BLE tasks.
@@ -88,13 +93,6 @@ async fn ble_task<C: Controller, P: PacketPool>(mut runner: Runner<'_, C, P>) {
     }
 }
 
-async fn blink(mut led_pin: Output<'static>) {
-    loop {
-        led_pin.toggle();
-        Timer::after_secs(1).await;
-    }
-}
-
 /// Stream Events until the connection closes.
 ///
 /// This function will handle the GATT events and process them.
@@ -103,21 +101,23 @@ async fn gatt_events_task<P: PacketPool>(
     server: &Server<'_>,
     conn: &GattConnection<'_, '_, P>,
     command_signal: &'static Signal<ThreadModeRawMutex, DriveCommand>,
-    duty_limits: ((u16, u16), (u16, u16)),
+    indicator_signal: &'static Signal<ThreadModeRawMutex, PeripheralState>,
+    duty_limits: DutyLimits,
 ) -> Result<(), Error> {
     let drive_command_char = server.car_service.drive_command;
     let duty_limits_char = server.car_service.duty_limits;
 
-    let mut duty_limits_bytes = [0u8; 8];
-    duty_limits_bytes[0..2].copy_from_slice(&duty_limits.0.0.to_le_bytes());
-    duty_limits_bytes[2..4].copy_from_slice(&duty_limits.0.1.to_le_bytes());
-    duty_limits_bytes[4..6].copy_from_slice(&duty_limits.1.0.to_le_bytes());
-    duty_limits_bytes[6..8].copy_from_slice(&duty_limits.1.1.to_le_bytes());
+    let duty_limits_bytes = encode_duty_limits(duty_limits);
     conn.set(&duty_limits_char, &duty_limits_bytes)?;
 
     let reason = loop {
         match conn.next().await {
-            GattConnectionEvent::Disconnected { reason } => break reason,
+            GattConnectionEvent::Disconnected { reason } => {
+                // Immediately halt motors on disconnect
+                command_signal.signal(DriveCommand { left: 0, right: 0 });
+                indicator_signal.signal(PeripheralState::Advertising);
+                break reason;
+            }
             GattConnectionEvent::Gatt { event } => {
                 if let GattEvent::Write(write_event) = &event
                     && write_event.handle() == drive_command_char.handle
@@ -176,22 +176,4 @@ async fn advertise<'values, 'server, C: Controller>(
     let conn = advertiser.accept().await?.with_attribute_server(server)?;
     info!("[adv] connection established");
     Ok(conn)
-}
-
-fn decode_drive_command(data: &[u8]) -> Option<DriveCommand> {
-    if data.len() != 8 {
-        return None;
-    }
-
-    Some(DriveCommand {
-        left: i32::from_le_bytes(data[0..4].try_into().ok()?),
-        right: i32::from_le_bytes(data[4..8].try_into().ok()?),
-    })
-}
-
-fn encode_drive_command(cmd: DriveCommand) -> [u8; 8] {
-    let mut bytes = [0u8; 8];
-    bytes[..4].copy_from_slice(&cmd.left.to_le_bytes());
-    bytes[4..].copy_from_slice(&cmd.right.to_le_bytes());
-    bytes
 }

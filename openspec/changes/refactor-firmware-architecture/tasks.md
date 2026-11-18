@@ -19,7 +19,7 @@
 ## 4. Safety Watchdog & Failsafe Implementation
 
 - [x] 4.1 Implement autonomous 500ms command timeout watchdog and non-terminating error recovery loop in `CarControl::run` in `src/car_control.rs`
-- [ ] 4.2 Update `src/ble_peripheral.rs` to use `protocol.rs`, dispatch explicit zero-speed stop commands upon GATT disconnection, and publish `PeripheralState` updates to the indicator
+- [x] 4.2 Update `src/ble_peripheral.rs` to use `protocol.rs`, dispatch explicit zero-speed stop commands upon GATT disconnection, and publish `PeripheralState` updates to the indicator
 
 ## 5. System Orchestration & Final Verification
 

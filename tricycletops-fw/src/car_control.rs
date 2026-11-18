@@ -35,11 +35,13 @@ impl<'a> CarControl<'a> {
         }
     }
 
-    pub fn duty_limits(&self) -> ((u16, u16), (u16, u16)) {
-        (
-            (LEFT_MOTOR_MIN_DUTY, self.left_motor.max_duty()),
-            (RIGHT_MOTOR_MIN_DUTY, self.right_motor.max_duty()),
-        )
+    pub fn duty_limits(&self) -> crate::protocol::DutyLimits {
+        crate::protocol::DutyLimits {
+            left_min: LEFT_MOTOR_MIN_DUTY,
+            left_max: self.left_motor.max_duty(),
+            right_min: RIGHT_MOTOR_MIN_DUTY,
+            right_max: self.right_motor.max_duty(),
+        }
     }
 
     /// Set individual speeds for left and right motors.
