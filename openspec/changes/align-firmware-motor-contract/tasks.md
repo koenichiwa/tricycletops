@@ -2,7 +2,7 @@
 
 ## 1. Low-Level Motor Control & Actuation Refactoring
 
-- [ ] 1.1 Introduce `Direction` enum (`Forward`, `Reverse`) and update `MotorControl` in `tricycletops-fw/src/motor_control.rs` to implement `set_duty(duty: u16, direction: Direction)` and `stop()`. Verify compilation with `cargo check --target thumbv6m-none-eabi`.
+- [x] 1.1 Introduce `Direction` enum (`Forward`, `Reverse`) and update `MotorControl` in `tricycletops-fw/src/motor_control.rs` to implement `set_duty(duty: u16, direction: Direction)` and `stop()`. Verify compilation with `cargo check --target thumbv6m-none-eabi`.
 - [ ] 1.2 Refactor `CarControl` in `tricycletops-fw/src/car_control.rs` to decompose signed `i32` drive commands into raw `(u16, Direction)` tuples via `split_speed()` and actuate wheels via `set_duty`. Verify compilation with `cargo check --target thumbv6m-none-eabi`.
 
 ## 2. BLE Characteristic `fff2` 8-Byte Alignment & Deadband Configuration
