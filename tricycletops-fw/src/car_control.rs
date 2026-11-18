@@ -1,9 +1,11 @@
 #[cfg(all(target_arch = "arm", target_os = "none"))]
-use defmt::info;
+use defmt::{info, warn};
 #[cfg(all(target_arch = "arm", target_os = "none"))]
 use embassy_rp::pwm::PwmError;
 #[cfg(all(target_arch = "arm", target_os = "none"))]
 use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, signal::Signal};
+#[cfg(all(target_arch = "arm", target_os = "none"))]
+use embassy_time::{Duration, with_timeout};
 
 use crate::motor_control::Direction;
 #[cfg(all(target_arch = "arm", target_os = "none"))]
@@ -61,16 +63,25 @@ impl<'a> CarControl<'a> {
     pub async fn run(
         &mut self,
         drive_command_signal: &'static Signal<ThreadModeRawMutex, DriveCommand>,
-    ) -> Result<(), PwmError> {
+    ) -> ! {
+        const WATCHDOG_TIMEOUT: Duration = Duration::from_millis(500);
+
         loop {
-            let DriveCommand { left, right } = drive_command_signal.wait().await;
-            info!(
-                "Car control task: setting speeds left={}, right={}",
-                left, right
-            );
-            if let Err(error) = self.set_speeds(left, right) {
-                let _ = self.set_speeds(0, 0);
-                return Err(error);
+            match with_timeout(WATCHDOG_TIMEOUT, drive_command_signal.wait()).await {
+                Ok(cmd) => {
+                    info!(
+                        "Car control task: setting speeds left={}, right={}",
+                        cmd.left, cmd.right
+                    );
+                    if let Err(err) = self.set_speeds(cmd.left, cmd.right) {
+                        warn!("PWM error setting speeds: {:?}", defmt::Debug2Format(&err));
+                        let _ = self.stop();
+                    }
+                }
+                Err(_) => {
+                    // Watchdog timeout elapsed without receiving a new drive command -> safety halt
+                    let _ = self.stop();
+                }
             }
         }
     }

@@ -16,11 +16,8 @@ use tricycletops_fw::car_control::{CarControl, DriveCommand};
 static CAR_COMMAND_SIGNAL: Signal<ThreadModeRawMutex, DriveCommand> = Signal::new();
 
 #[embassy_executor::task]
-async fn car_control_task(mut car: CarControl<'static>) {
-    if let Err(error) = car.run(&CAR_COMMAND_SIGNAL).await {
-        let error = defmt::Debug2Format(&error);
-        info!("[car_control_task] error: {:?}", error);
-    }
+async fn car_control_task(mut car: CarControl<'static>) -> ! {
+    car.run(&CAR_COMMAND_SIGNAL).await
 }
 
 #[embassy_executor::main]
