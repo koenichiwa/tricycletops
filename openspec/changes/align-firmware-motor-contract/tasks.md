@@ -13,6 +13,6 @@
 
 ## 3. End-to-End Build Verification & Protocol Documentation
 
-- [ ] 3.1 Compile `tricycletops-fw` with release profile (`cargo build --release --target thumbv6m-none-eabi`) to ensure zero compiler errors or warnings.
+- [x] 3.1 Compile `tricycletops-fw` with release profile (`cargo build --release --target thumbv6m-none-eabi`) to ensure zero compiler errors or warnings.
 - [ ] 3.2 Run local unit tests in `tricycletops-app` (`./gradlew test`) to verify compatibility with 8-byte duty limit parsing and differential drive calculation.
 - [ ] 3.3 Update `GEMINI.md` specification to document the 8-byte `fff2` characteristic format and firmware `MotorControl` design.
