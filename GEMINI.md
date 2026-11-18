@@ -16,35 +16,13 @@ The project is split into two main components:
 
 ## 📂 Repository Structure
 
-```
-tricycletops/
-├── tricycletops-fw/          # Async Rust Firmware (Embassy & trouble-host)
-│   ├── src/
-│   │   ├── main.rs           # Core entry point, task spawner, board initialization
-│   │   ├── lib.rs            # Library root exposing testable modules
-│   │   ├── board.rs          # BSP: GPIO pins, PWM slices, CYW43 setup, motor driver instantiation
-│   │   ├── ble_peripheral.rs # trouble-host BLE peripheral stack and GATT server
-│   │   ├── car_control.rs    # Dual motor driver with watchdog timeout and speed kinematics
-│   │   ├── motor_control.rs  # Individual motor direction & PWM speed driver
-│   │   ├── protocol.rs       # GATT byte codecs for drive commands and duty limits
-│   │   └── indicator.rs      # State-driven LED patterns for peripheral connection status
-│   ├── .cargo/               # Embedded build configs and runner specifications
-│   ├── memory.x              # RP2040 memory map layout
-│   └── Cargo.toml            # Firmware Cargo dependencies and patches
-│
-└── tricycletops-app/         # Kotlin Android Application (Jetpack Compose)
-    ├── app/
-    │   ├── build.gradle.kts  # App dependencies, SDK targets (Min: 34, Target: 36)
-    │   └── src/
-    │       ├── main/
-    │       │   ├── AndroidManifest.xml
-    │       │   └── java/.../tricycletops/
-    │       │       ├── MainActivity.kt       # Scanner Jetpack Compose UI entry point
-    │       │       ├── BleScannerManager.kt  # Handles Bluetooth permission, scanning logic
-    │       │       └── BleDevice.kt          # UI model representing a discovered BLE peripheral
-    │       └── test/java/.../tricycletops/
-    │           └── ExampleUnitTest.kt        # Local unit tests
-```
+The workspace is divided into three high-level boundaries:
+
+1. **`tricycletops-fw/`**: Async Rust Firmware (Embassy & trouble-host)
+2. **`tricycletops-app/`**: Kotlin Android Application (Jetpack Compose)
+3. **`openspec/`**: OpenSpec specifications and documentation workflows
+
+> 🤖 **Agent Instruction**: Do not rely on hardcoded file paths in this file. The repository structure is actively refactored. Always use `glob` and `grep_search` to dynamically discover files (e.g., searching for GATT scanning logic, UI components, or motor control implementations).
 
 ---
 

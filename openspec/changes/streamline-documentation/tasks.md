@@ -7,8 +7,8 @@
 
 ## 2. Refine GEMINI.md
 
-- [ ] 2.1 Remove outdated and granular file trees from `GEMINI.md` (including obsolete `BleScannerManager.kt` and `BleDevice.kt` entries), replacing them with high-level module boundaries and dynamic discovery instructions (`glob`/`grep_search`). Verify no nonexistent paths remain.
-- [ ] 2.2 Add an explicit directive in `GEMINI.md` designating `openspec/specs/` as the single authoritative source of truth for BLE protocols, kinematics, and safety behaviors, keeping the existing compact GATT tables as quick reference only.
+- [x] 2.1 Remove outdated and granular file trees from `GEMINI.md` (including obsolete `BleScannerManager.kt` and `BleDevice.kt` entries), replacing them with high-level module boundaries and dynamic discovery instructions (`glob`/`grep_search`). Verify no nonexistent paths remain.
+- [x] 2.2 Add an explicit directive in `GEMINI.md` designating `openspec/specs/` as the single authoritative source of truth for BLE protocols, kinematics, and safety behaviors, keeping the existing compact GATT tables as quick reference only.
 
 ## 3. Embed Workflow Synchronization Guidance
 
