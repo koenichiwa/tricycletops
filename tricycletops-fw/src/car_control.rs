@@ -8,6 +8,9 @@ use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, signal::Signal};
 
 use crate::motor_control::{Direction, MotorControl};
 
+pub const LEFT_MOTOR_MIN_DUTY: u16 = 200;
+pub const RIGHT_MOTOR_MIN_DUTY: u16 = 200;
+
 #[derive(Clone, Copy, defmt::Format)]
 pub struct DriveCommand {
     pub left: i32,
@@ -49,6 +52,13 @@ impl CarControl<'_> {
             left_motor,
             right_motor,
         }
+    }
+
+    pub fn duty_limits(&self) -> ((u16, u16), (u16, u16)) {
+        (
+            (LEFT_MOTOR_MIN_DUTY, self.left_motor.max_duty()),
+            (RIGHT_MOTOR_MIN_DUTY, self.right_motor.max_duty()),
+        )
     }
 
     pub fn max_duties(&self) -> (u16, u16) {
