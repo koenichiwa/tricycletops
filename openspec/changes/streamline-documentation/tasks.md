@@ -16,4 +16,4 @@
 
 ## 4. Documentation Verification
 
-- [ ] 4.1 Run pre-commit checks (`check-yaml`, `check-toml`, trailing whitespace) and verify that all cross-references between `README.md`, `GEMINI.md`, and `openspec/specs/` resolve correctly.
+- [x] 4.1 Run pre-commit checks (`check-yaml`, `check-toml`, trailing whitespace) and verify that all cross-references between `README.md`, `GEMINI.md`, and `openspec/specs/` resolve correctly.
