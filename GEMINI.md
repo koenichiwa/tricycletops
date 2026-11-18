@@ -51,7 +51,7 @@ The firmware implements a GATT peripheral advertising the local name `Tricycleto
 * **Device Advertisement Name**: `Tricycletops` (case-insensitive checks are recommended)
 * **GATT Service UUID**: `fff0` (Full 128-bit: `0000fff0-0000-1000-8000-00805f9b34fb`)
 * **Drive Characteristic UUID**: `fff1` (Read / Write, 8-byte payload)
-* **Max Duty Cycle Characteristic UUID**: `fff2` (Read, 4-byte payload)
+* **Duty Limits Characteristic UUID**: `fff2` (Read, 8-byte payload)
 
 ### 🏎️ Drive Command Payload (8 Bytes - Characteristic `fff1`)
 
@@ -62,14 +62,16 @@ The characteristic `fff1` expects a write containing **two 32-bit signed integer
 | **0 to 3** | `i32` (LE) | `-Left Max Duty` to `Left Max Duty` | **Left Motor Speed** (Positive = Forward, Negative = Reverse, `0` = Stop) |
 | **4 to 7** | `i32` (LE) | `-Right Max Duty` to `Right Max Duty` | **Right Motor Speed** (Positive = Forward, Negative = Reverse, `0` = Stop) |
 
-### 📊 Max Duty Cycle Payload (4 Bytes - Characteristic `fff2`)
+### 📊 Duty Limits Payload (8 Bytes - Characteristic `fff2`)
 
-The characteristic `fff2` exposes the maximum PWM duty cycle limits configured on the microcontroller. It contains **two 16-bit unsigned integers (`u16`) in little-endian format**:
+The characteristic `fff2` exposes the minimum (deadband) and maximum PWM duty cycle limits configured on the microcontroller. It contains **four 16-bit unsigned integers (`u16`) in little-endian format**:
 
 | Byte Offset | Data Type | Description |
 |:---|:---|:---|
-| **0 to 1** | `u16` (LE) | **Left Motor Maximum Duty Cycle Limit** |
-| **2 to 3** | `u16` (LE) | **Right Motor Maximum Duty Cycle Limit** |
+| **0 to 1** | `u16` (LE) | **Left Motor Minimum Duty Cycle Limit** |
+| **2 to 3** | `u16` (LE) | **Left Motor Maximum Duty Cycle Limit** |
+| **4 to 5** | `u16` (LE) | **Right Motor Minimum Duty Cycle Limit** |
+| **6 to 7** | `u16` (LE) | **Right Motor Maximum Duty Cycle Limit** |
 
 ---
 
@@ -124,7 +126,9 @@ All app commands must be run inside the `tricycletops-app/` directory:
    - Use `embassy_time::Timer` for delays (`Timer::after_secs(1).await` or `Timer::after_millis(x).await`).
 3. **Hardware & PWM Drivers**:
    - Motor driving is implemented via RP2040 hardware PWM slices (`PWM_SLICE0` for PIN_0/PIN_1 and `PWM_SLICE1` for PIN_2/PIN_3).
-   - Speed changes must clamp inputs safely between `-1.0` and `1.0`. Ensure fully-off state is explicitly set via `set_duty_cycle_fully_off()` to prevent motor creep.
+   - Low-level actuation uses raw `u16` duty cycles and an explicit `Direction` enum (`Forward`, `Reverse`) in `MotorControl`, mapping forward motion to direction pin LOW and reverse to HIGH with inverted duty (`max_duty - duty`).
+   - `CarControl` decomposes incoming signed `i32` commands from characteristic `fff1` into `(duty: u16, direction: Direction)` tuples via `split_speed()`.
+   - Ensure fully-off state is explicitly set via `set_duty_cycle_fully_off()` (or `stop()`) to prevent motor creep.
 4. **Diagnostic Logging**:
    - Never print to `stdout`/`stderr` using standard macros. Always use `defmt::info!`, `defmt::debug!`, `defmt::warn!`, or `defmt::error!`.
 5. **BLE Handling**:
