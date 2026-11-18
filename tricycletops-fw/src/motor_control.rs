@@ -118,12 +118,12 @@ impl<'a> Motor for MotorControl<'a> {
 
         match direction {
             Direction::Forward => {
-                self.direction_pin.set_low();
                 self.speed_pin.set_duty_cycle(duty)?;
+                self.direction_pin.set_low();
             }
             Direction::Reverse => {
-                self.direction_pin.set_high();
                 self.speed_pin.set_duty_cycle(max_duty - duty)?;
+                self.direction_pin.set_high();
             }
         }
 
@@ -131,8 +131,8 @@ impl<'a> Motor for MotorControl<'a> {
     }
 
     fn stop(&mut self) -> Result<(), Self::Error> {
-        self.direction_pin.set_low();
         self.speed_pin.set_duty_cycle_fully_off()?;
+        self.direction_pin.set_low();
         Ok(())
     }
 }
