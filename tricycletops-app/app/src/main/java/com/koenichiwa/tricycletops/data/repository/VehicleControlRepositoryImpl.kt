@@ -29,6 +29,7 @@ class VehicleControlRepositoryImpl(
 ) : VehicleControlRepository {
     override val discoveredVehicles: StateFlow<List<DiscoveredVehicle>> = scanner.discoveredDevices
     override val isScanning: StateFlow<Boolean> = scanner.isScanning
+    override val isBluetoothEnabled: StateFlow<Boolean> = scanner.isBluetoothEnabled
     override val connectionState: StateFlow<VehicleConnectionState> = gattClient.connectionState
 
     private var lastSentTime = 0L

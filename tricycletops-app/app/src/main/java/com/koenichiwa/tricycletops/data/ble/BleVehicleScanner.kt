@@ -2,11 +2,15 @@ package com.koenichiwa.tricycletops.data.ble
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.ParcelUuid
 import androidx.core.content.ContextCompat
@@ -27,6 +31,33 @@ class BleVehicleScanner(
 
     private val _isScanning = MutableStateFlow(false)
     override val isScanning: StateFlow<Boolean> = _isScanning.asStateFlow()
+
+    private val _isBluetoothEnabled = MutableStateFlow(adapter?.isEnabled == true)
+    override val isBluetoothEnabled: StateFlow<Boolean> = _isBluetoothEnabled.asStateFlow()
+
+    private val bluetoothReceiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (intent?.action == BluetoothAdapter.ACTION_STATE_CHANGED) {
+                    val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)
+                    val isEnabled = state == BluetoothAdapter.STATE_ON
+                    _isBluetoothEnabled.value = isEnabled
+                    if (!isEnabled) {
+                        _isScanning.value = false
+                    }
+                }
+            }
+        }
+
+    init {
+        val filter = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
+        ContextCompat.registerReceiver(
+            context.applicationContext,
+            bluetoothReceiver,
+            filter,
+            ContextCompat.RECEIVER_EXPORTED,
+        )
+    }
 
     private val scanCallback =
         object : ScanCallback() {
@@ -49,14 +80,19 @@ class BleVehicleScanner(
         }
 
     fun hasPermissions(): Boolean {
-        return ContextCompat.checkSelfPermission(
+        val hasScan = ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.BLUETOOTH_SCAN,
         ) == PackageManager.PERMISSION_GRANTED
+        val hasConnect = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.BLUETOOTH_CONNECT,
+        ) == PackageManager.PERMISSION_GRANTED
+        return hasScan && hasConnect
     }
 
     fun isBluetoothEnabled(): Boolean {
-        return adapter?.isEnabled == true
+        return _isBluetoothEnabled.value
     }
 
     @SuppressLint("MissingPermission")

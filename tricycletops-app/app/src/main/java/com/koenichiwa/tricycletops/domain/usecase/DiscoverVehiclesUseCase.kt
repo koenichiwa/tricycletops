@@ -13,6 +13,9 @@ class DiscoverVehiclesUseCase(
     val isScanning: StateFlow<Boolean>
         get() = repository.isScanning
 
+    val isBluetoothEnabled: StateFlow<Boolean>
+        get() = repository.isBluetoothEnabled
+
     fun startScan() {
         repository.startScan()
     }

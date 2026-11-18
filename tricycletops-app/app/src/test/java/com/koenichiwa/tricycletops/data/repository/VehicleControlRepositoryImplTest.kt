@@ -33,6 +33,9 @@ class VehicleControlRepositoryImplTest {
         val scanningFlow = MutableStateFlow(false)
         override val isScanning: StateFlow<Boolean> = scanningFlow
 
+        val bluetoothEnabledFlow = MutableStateFlow(true)
+        override val isBluetoothEnabled: StateFlow<Boolean> = bluetoothEnabledFlow
+
         var startScanCalled = false
         var stopScanCalled = false
 
@@ -85,6 +88,14 @@ class VehicleControlRepositoryImplTest {
                 throttleIntervalMs = 40L,
                 timeProvider = { virtualTime },
             )
+    }
+
+    @Test
+    fun `isBluetoothEnabled reflects scanner status`() {
+        assertTrue(repository.isBluetoothEnabled.value)
+
+        fakeScanner.bluetoothEnabledFlow.value = false
+        assertEquals(false, repository.isBluetoothEnabled.value)
     }
 
     @Test

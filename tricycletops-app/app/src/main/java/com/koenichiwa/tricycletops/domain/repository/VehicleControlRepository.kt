@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 interface VehicleControlRepository {
     val discoveredVehicles: StateFlow<List<DiscoveredVehicle>>
     val isScanning: StateFlow<Boolean>
+    val isBluetoothEnabled: StateFlow<Boolean>
     val connectionState: StateFlow<VehicleConnectionState>
 
     fun startScan()
