@@ -53,16 +53,4 @@ impl<'a> MotorControl<'a> {
         self.speed_pin.set_duty_cycle_fully_off()?;
         Ok(())
     }
-
-    pub fn set_speed(&mut self, speed: i32) -> Result<(), PwmError> {
-        let max_duty = self.max_duty();
-        let clamped = speed.clamp(-(max_duty as i32), max_duty as i32);
-        if clamped > 0 {
-            self.set_duty(clamped as u16, Direction::Forward)
-        } else if clamped < 0 {
-            self.set_duty(clamped.unsigned_abs() as u16, Direction::Reverse)
-        } else {
-            self.stop()
-        }
-    }
 }

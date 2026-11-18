@@ -6,7 +6,7 @@ use embassy_rp::{
 };
 use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, signal::Signal};
 
-use crate::motor_control::MotorControl;
+use crate::motor_control::{Direction, MotorControl};
 
 #[derive(Clone, Copy, defmt::Format)]
 pub struct DriveCommand {
@@ -58,8 +58,11 @@ impl CarControl<'_> {
     /// Set individual speeds for left and right motors.
     /// Inputs should be integers between -max_duty and max_duty.
     pub fn set_speeds(&mut self, left_speed: i32, right_speed: i32) -> Result<(), PwmError> {
-        self.left_motor.set_speed(left_speed)?;
-        self.right_motor.set_speed(right_speed)?;
+        let (left_duty, left_dir) = split_speed(left_speed, self.left_motor.max_duty());
+        let (right_duty, right_dir) = split_speed(right_speed, self.right_motor.max_duty());
+
+        self.left_motor.set_duty(left_duty, left_dir)?;
+        self.right_motor.set_duty(right_duty, right_dir)?;
 
         Ok(())
     }
@@ -79,5 +82,14 @@ impl CarControl<'_> {
                 return Err(error);
             }
         }
+    }
+}
+
+fn split_speed(speed: i32, max_duty: u16) -> (u16, Direction) {
+    let clamped = speed.clamp(-(max_duty as i32), max_duty as i32);
+    if clamped >= 0 {
+        (clamped as u16, Direction::Forward)
+    } else {
+        (clamped.unsigned_abs() as u16, Direction::Reverse)
     }
 }
