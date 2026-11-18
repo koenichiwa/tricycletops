@@ -1,11 +1,7 @@
 #[cfg(all(target_arch = "arm", target_os = "none"))]
 use defmt::info;
 #[cfg(all(target_arch = "arm", target_os = "none"))]
-use embassy_rp::{
-    Peri,
-    gpio::{Level, Output, Pin},
-    pwm::{ChannelBPin, Config, Pwm, PwmError, Slice},
-};
+use embassy_rp::pwm::PwmError;
 #[cfg(all(target_arch = "arm", target_os = "none"))]
 use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, signal::Signal};
 
@@ -29,32 +25,8 @@ pub struct CarControl<'a> {
 }
 
 #[cfg(all(target_arch = "arm", target_os = "none"))]
-impl CarControl<'_> {
-    pub fn new<SliceLeft, SpeedLeft, SliceRight, SpeedRight>(
-        motor_left_pwm_slice: Peri<'static, SliceLeft>,
-        motor_left_speed: Peri<'static, SpeedLeft>,
-        motor_left_direction: Peri<'static, impl Pin>,
-        motor_right_pwm_slice: Peri<'static, SliceRight>,
-        motor_right_speed: Peri<'static, SpeedRight>,
-        motor_right_direction: Peri<'static, impl Pin>,
-    ) -> Self
-    where
-        SliceLeft: Slice,
-        SpeedLeft: ChannelBPin<SliceLeft>,
-        SliceRight: Slice,
-        SpeedRight: ChannelBPin<SliceRight>,
-    {
-        let config = Config::default();
-
-        let motor_left_speed =
-            Pwm::new_output_b(motor_left_pwm_slice, motor_left_speed, config.clone());
-        let motor_left_direction = Output::new(motor_left_direction, Level::Low);
-        let left_motor = MotorControl::new(motor_left_speed, motor_left_direction);
-
-        let motor_right_speed = Pwm::new_output_b(motor_right_pwm_slice, motor_right_speed, config);
-        let motor_right_direction = Output::new(motor_right_direction, Level::Low);
-        let right_motor = MotorControl::new(motor_right_speed, motor_right_direction);
-
+impl<'a> CarControl<'a> {
+    pub const fn new(left_motor: MotorControl<'a>, right_motor: MotorControl<'a>) -> Self {
         Self {
             left_motor,
             right_motor,
@@ -77,6 +49,12 @@ impl CarControl<'_> {
         self.left_motor.set_duty(left_duty, left_dir)?;
         self.right_motor.set_duty(right_duty, right_dir)?;
 
+        Ok(())
+    }
+
+    pub fn stop(&mut self) -> Result<(), PwmError> {
+        self.left_motor.stop()?;
+        self.right_motor.stop()?;
         Ok(())
     }
 
@@ -165,4 +143,3 @@ mod tests {
         assert_eq!(dir, Direction::Reverse);
     }
 }
-

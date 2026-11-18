@@ -13,8 +13,8 @@
 
 ## 3. Board Support Package & Driver Decoupling
 
-- [ ] 3.1 Create `src/board.rs` encapsulating RP2040 pin configurations, PIO/DMA interrupt bindings, CYW43 wireless initialization, and motor driver instantiation, verifying compilation
-- [ ] 3.2 Refactor `CarControl` in `src/car_control.rs` to accept pre-configured `MotorControl` instances via dependency injection rather than raw hardware generic pins and slices, verifying compilation
+- [x] 3.1 Create `src/board.rs` encapsulating RP2040 pin configurations, PIO/DMA interrupt bindings, CYW43 wireless initialization, and motor driver instantiation, verifying compilation
+- [x] 3.2 Refactor `CarControl` in `src/car_control.rs` to accept pre-configured `MotorControl` instances via dependency injection rather than raw hardware generic pins and slices, verifying compilation
 
 ## 4. Safety Watchdog & Failsafe Implementation
 
