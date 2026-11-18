@@ -24,11 +24,8 @@ bind_interrupts!(struct Irqs {
 
 static CYW43_STATE: StaticCell<cyw43::State> = StaticCell::new();
 
-pub type Cyw43Runner = cyw43::Runner<
-    'static,
-    cyw43::SpiBus<Output<'static>, PioSpi<'static, PIO0, 0>>,
-    Cyw43439,
->;
+pub type Cyw43Runner =
+    cyw43::Runner<'static, cyw43::SpiBus<Output<'static>, PioSpi<'static, PIO0, 0>>, Cyw43439>;
 
 #[embassy_executor::task]
 pub async fn cyw43_task(runner: Cyw43Runner) -> ! {
