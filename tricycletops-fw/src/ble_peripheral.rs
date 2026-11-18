@@ -2,10 +2,11 @@ use defmt::{info, warn};
 use embassy_futures::join::join;
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::signal::Signal;
+use embassy_time::Timer;
 use trouble_host::prelude::*;
 
 use crate::car_control::DriveCommand;
-use crate::indicator::PeripheralState;
+use crate::indicator::IndicatorState;
 use crate::protocol::{DutyLimits, decode_drive_command, encode_drive_command, encode_duty_limits};
 
 /// Max number of connections
@@ -33,7 +34,7 @@ struct CarService {
 pub async fn run<C>(
     controller: C,
     command_signal: &'static Signal<ThreadModeRawMutex, DriveCommand>,
-    indicator_signal: &'static Signal<ThreadModeRawMutex, PeripheralState>,
+    indicator_signal: &'static Signal<ThreadModeRawMutex, IndicatorState>,
     duty_limits: DutyLimits,
 ) where
     C: Controller,
@@ -60,10 +61,10 @@ pub async fn run<C>(
 
     let _ = join(ble_task(runner), async {
         loop {
-            indicator_signal.signal(PeripheralState::Advertising);
+            indicator_signal.signal(IndicatorState::Advertising);
             match advertise("Tricycletops", &mut peripheral, &server).await {
                 Ok(conn) => {
-                    indicator_signal.signal(PeripheralState::Connected);
+                    indicator_signal.signal(IndicatorState::Connected);
                     let _ = gatt_events_task(
                         &server,
                         &conn,
@@ -74,8 +75,11 @@ pub async fn run<C>(
                     .await;
                 }
                 Err(e) => {
-                    let e = defmt::Debug2Format(&e);
-                    panic!("[adv] error: {e:?}");
+                    warn!(
+                        "[adv] advertising failed: {:?}, retrying...",
+                        defmt::Debug2Format(&e)
+                    );
+                    Timer::after_millis(100).await;
                 }
             }
         }
@@ -87,8 +91,11 @@ pub async fn run<C>(
 async fn ble_task<C: Controller, P: PacketPool>(mut runner: Runner<'_, C, P>) {
     loop {
         if let Err(e) = runner.run().await {
-            let e = defmt::Debug2Format(&e);
-            panic!("[ble_task] error: {e:?}");
+            warn!(
+                "[ble_task] runner error: {:?}, retrying...",
+                defmt::Debug2Format(&e)
+            );
+            Timer::after_millis(100).await;
         }
     }
 }
@@ -101,7 +108,7 @@ async fn gatt_events_task<P: PacketPool>(
     server: &Server<'_>,
     conn: &GattConnection<'_, '_, P>,
     command_signal: &'static Signal<ThreadModeRawMutex, DriveCommand>,
-    indicator_signal: &'static Signal<ThreadModeRawMutex, PeripheralState>,
+    indicator_signal: &'static Signal<ThreadModeRawMutex, IndicatorState>,
     duty_limits: DutyLimits,
 ) -> Result<(), Error> {
     let drive_command_char = server.car_service.drive_command;
@@ -115,7 +122,7 @@ async fn gatt_events_task<P: PacketPool>(
             GattConnectionEvent::Disconnected { reason } => {
                 // Immediately halt motors on disconnect
                 command_signal.signal(DriveCommand { left: 0, right: 0 });
-                indicator_signal.signal(PeripheralState::Advertising);
+                indicator_signal.signal(IndicatorState::Advertising);
                 break reason;
             }
             GattConnectionEvent::Gatt { event } => {
