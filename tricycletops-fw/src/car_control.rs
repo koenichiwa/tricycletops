@@ -157,7 +157,9 @@ impl<L: Motor, R: Motor> CarControl<L, R> {
                             "Car control task: setting initial speeds left={}, right={}",
                             cmd.left, cmd.right
                         );
-                        if let Err(err) = self.handle_command(cmd, indicator_signal, &mut in_failsafe) {
+                        if let Err(err) =
+                            self.handle_command(cmd, indicator_signal, &mut in_failsafe)
+                        {
                             warn!(
                                 "Motor error setting speeds: {:?}",
                                 defmt::Debug2Format(&err)
@@ -166,7 +168,10 @@ impl<L: Motor, R: Motor> CarControl<L, R> {
                     }
                     CarCommand::Disconnected => {
                         if let Err(err) = self.handle_disconnect(&mut in_failsafe) {
-                            warn!("Motor error during disconnect: {:?}", defmt::Debug2Format(&err));
+                            warn!(
+                                "Motor error during disconnect: {:?}",
+                                defmt::Debug2Format(&err)
+                            );
                         }
                     }
                 }
@@ -189,7 +194,10 @@ impl<L: Motor, R: Motor> CarControl<L, R> {
                     Ok(CarCommand::Disconnected) => {
                         has_received_command = false;
                         if let Err(err) = self.handle_disconnect(&mut in_failsafe) {
-                            warn!("Motor error during disconnect: {:?}", defmt::Debug2Format(&err));
+                            warn!(
+                                "Motor error during disconnect: {:?}",
+                                defmt::Debug2Format(&err)
+                            );
                         }
                     }
                     Err(_) => {
