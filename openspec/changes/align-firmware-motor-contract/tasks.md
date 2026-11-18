@@ -9,7 +9,7 @@
 
 - [x] 2.1 Define configurable deadband constants (`LEFT_MOTOR_MIN_DUTY`, `RIGHT_MOTOR_MIN_DUTY`) and update `CarControl::duty_limits()` to return four bounds: `((left_min, left_max), (right_min, right_max))`. Verify compilation with `cargo check --target thumbv6m-none-eabi`.
 - [x] 2.2 Update characteristic `fff2` in `tricycletops-fw/src/ble_peripheral.rs` to 8 bytes (`[u8; 8]`) and pack `left_min`, `left_max`, `right_min`, `right_max` as little-endian `u16` values. Verify compilation with `cargo check --target thumbv6m-none-eabi`.
-- [ ] 2.3 Update `tricycletops-fw/src/main.rs` to pass `duty_limits` to `ble_peripheral::run()`. Verify compilation with `cargo check --target thumbv6m-none-eabi`.
+- [x] 2.3 Update `tricycletops-fw/src/main.rs` to pass `duty_limits` to `ble_peripheral::run()`. Verify compilation with `cargo check --target thumbv6m-none-eabi`.
 
 ## 3. End-to-End Build Verification & Protocol Documentation
 

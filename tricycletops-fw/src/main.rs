@@ -112,7 +112,7 @@ async fn main(spawner: Spawner) {
         p.PIN_3,
         p.PIN_2,
     );
-    let max_duties = car.max_duties();
+    let duty_limits = car.duty_limits();
     spawner.spawn(car_control_task(car).unwrap());
 
     let mut led_pin = Output::new(p.PIN_15, Level::High);
@@ -123,5 +123,5 @@ async fn main(spawner: Spawner) {
     led_pin.toggle();
 
     info!("Running BLE peripheral...");
-    ble_peripheral::run(ble_controller, &CAR_COMMAND_SIGNAL, led_pin, max_duties).await;
+    ble_peripheral::run(ble_controller, &CAR_COMMAND_SIGNAL, led_pin, duty_limits).await;
 }

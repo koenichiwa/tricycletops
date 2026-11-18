@@ -29,33 +29,15 @@ struct CarService {
     duty_limits: [u8; 8],
 }
 
-pub trait IntoDutyLimits {
-    fn into_duty_limits(self) -> ((u16, u16), (u16, u16));
-}
-
-impl IntoDutyLimits for ((u16, u16), (u16, u16)) {
-    fn into_duty_limits(self) -> ((u16, u16), (u16, u16)) {
-        self
-    }
-}
-
-impl IntoDutyLimits for (u16, u16) {
-    fn into_duty_limits(self) -> ((u16, u16), (u16, u16)) {
-        ((0, self.0), (0, self.1))
-    }
-}
-
 /// Run the BLE stack.
-pub async fn run<C, D>(
+pub async fn run<C>(
     controller: C,
     command_signal: &'static Signal<ThreadModeRawMutex, DriveCommand>,
     led_pin: Output<'static>,
-    duty_limits: D,
+    duty_limits: ((u16, u16), (u16, u16)),
 ) where
     C: Controller,
-    D: IntoDutyLimits,
 {
-    let duty_limits = duty_limits.into_duty_limits();
     // Using a fixed "random" address can be useful for testing. In real scenarios, one would
     // use e.g. the MAC 6 byte array as the address (how to get that varies by the platform).
     let address: Address = Address::random([0xff, 0x8f, 0x1a, 0x05, 0xe4, 0xff]);

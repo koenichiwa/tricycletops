@@ -61,10 +61,6 @@ impl CarControl<'_> {
         )
     }
 
-    pub fn max_duties(&self) -> (u16, u16) {
-        (self.left_motor.max_duty(), self.right_motor.max_duty())
-    }
-
     /// Set individual speeds for left and right motors.
     /// Inputs should be integers between -max_duty and max_duty.
     pub fn set_speeds(&mut self, left_speed: i32, right_speed: i32) -> Result<(), PwmError> {
