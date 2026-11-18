@@ -12,7 +12,7 @@
 
 ## 3. Embed Workflow Synchronization Guidance
 
-- [ ] 3.1 Update `openspec/config.yaml` under `operations.apply` and `operations.archive` to add guidance reminding agents and contributors to keep `README.md` and `GEMINI.md` in sync whenever protocol specifications change. Verify configuration syntax.
+- [x] 3.1 Update `openspec/config.yaml` under `operations.apply` and `operations.archive` to add guidance reminding agents and contributors to keep `README.md` and `GEMINI.md` in sync whenever protocol specifications change. Verify configuration syntax.
 
 ## 4. Documentation Verification
 
