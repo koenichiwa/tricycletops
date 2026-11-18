@@ -1,27 +1,34 @@
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 use defmt::info;
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 use embassy_rp::{
     Peri,
     gpio::{Level, Output, Pin},
     pwm::{ChannelBPin, Config, Pwm, PwmError, Slice},
 };
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, signal::Signal};
 
-use crate::motor_control::{Direction, MotorControl};
+use crate::motor_control::Direction;
+#[cfg(all(target_arch = "arm", target_os = "none"))]
+use crate::motor_control::MotorControl;
 
 pub const LEFT_MOTOR_MIN_DUTY: u16 = 200;
 pub const RIGHT_MOTOR_MIN_DUTY: u16 = 200;
 
-#[derive(Clone, Copy, defmt::Format)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, defmt::Format)]
 pub struct DriveCommand {
     pub left: i32,
     pub right: i32,
 }
 
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 pub struct CarControl<'a> {
     left_motor: MotorControl<'a>,
     right_motor: MotorControl<'a>,
 }
 
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 impl CarControl<'_> {
     pub fn new<SliceLeft, SpeedLeft, SliceRight, SpeedRight>(
         motor_left_pwm_slice: Peri<'static, SliceLeft>,
@@ -91,7 +98,7 @@ impl CarControl<'_> {
     }
 }
 
-fn split_speed(speed: i32, max_duty: u16) -> (u16, Direction) {
+pub fn split_speed(speed: i32, max_duty: u16) -> (u16, Direction) {
     let clamped = speed.clamp(-(max_duty as i32), max_duty as i32);
     if clamped >= 0 {
         (clamped as u16, Direction::Forward)

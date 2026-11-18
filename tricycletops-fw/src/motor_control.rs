@@ -1,3 +1,4 @@
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 use embassy_rp::{
     gpio::Output,
     pwm::{Pwm, PwmError, SetDutyCycle},
@@ -9,11 +10,13 @@ pub enum Direction {
     Reverse,
 }
 
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 pub struct MotorControl<'a> {
     speed_pin: Pwm<'a>,
     direction_pin: Output<'a>,
 }
 
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 impl<'a> MotorControl<'a> {
     pub const fn new(speed_pin: Pwm<'a>, direction_pin: Output<'a>) -> Self {
         Self {
