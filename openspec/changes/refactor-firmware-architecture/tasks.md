@@ -9,7 +9,7 @@
 
 - [x] 2.1 Implement `src/protocol.rs` with byte codecs (`decode_drive_command`, `encode_drive_command`, `encode_duty_limits`) and verify unit tests pass on host via `cargo test --lib -- protocol`
 - [x] 2.2 Refactor speed splitting and clamping in `src/car_control.rs` into testable pure functions and verify unit tests pass on host via `cargo test --lib -- car_control`
-- [ ] 2.3 Implement `src/indicator.rs` defining `PeripheralState` and `indicator_task` with state-specific LED patterns (advertising blink, connected solid, failsafe flash) and verify compilation
+- [x] 2.3 Implement `src/indicator.rs` defining `PeripheralState` and `indicator_task` with state-specific LED patterns (advertising blink, connected solid, failsafe flash) and verify compilation
 
 ## 3. Board Support Package & Driver Decoupling
 
