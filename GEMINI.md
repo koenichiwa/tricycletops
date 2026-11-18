@@ -20,10 +20,14 @@ The project is split into two main components:
 tricycletops/
 ├── tricycletops-fw/          # Async Rust Firmware (Embassy & trouble-host)
 │   ├── src/
-│   │   ├── main.rs           # Core entry point, task spawner, hardware initialization
+│   │   ├── main.rs           # Core entry point, task spawner, board initialization
+│   │   ├── lib.rs            # Library root exposing testable modules
+│   │   ├── board.rs          # BSP: GPIO pins, PWM slices, CYW43 setup, motor driver instantiation
 │   │   ├── ble_peripheral.rs # trouble-host BLE peripheral stack and GATT server
-│   │   ├── car_control.rs    # Dual motor driver (translates DriveCommand into PWM duty cycles)
-│   │   └── motor_control.rs  # Individual motor direction & PWM speed driver
+│   │   ├── car_control.rs    # Dual motor driver with watchdog timeout and speed kinematics
+│   │   ├── motor_control.rs  # Individual motor direction & PWM speed driver
+│   │   ├── protocol.rs       # GATT byte codecs for drive commands and duty limits
+│   │   └── indicator.rs      # State-driven LED patterns for peripheral connection status
 │   ├── .cargo/               # Embedded build configs and runner specifications
 │   ├── memory.x              # RP2040 memory map layout
 │   └── Cargo.toml            # Firmware Cargo dependencies and patches
@@ -81,6 +85,10 @@ The characteristic `fff2` exposes the minimum (deadband) and maximum PWM duty cy
 
 All firmware commands must be run inside the `tricycletops-fw/` directory:
 
+* **Host Unit Tests**:
+  ```bash
+  cargo test --lib --target x86_64-unknown-linux-gnu
+  ```
 * **Syntax & Type Check**:
   ```bash
   cargo check --target thumbv6m-none-eabi
@@ -119,21 +127,31 @@ All app commands must be run inside the `tricycletops-app/` directory:
 
 ### 🦀 Firmware (Rust)
 
-1. **Embedded Constrains (`no_std`)**:
-   - The environment is strictly `#![no_std]` and `#![no_main]`. Dynamic memory allocation (`alloc`) is **disabled**; all resources must be statically allocated. Use `StaticCell` for dynamic structures that require `'static` lifetimes.
-2. **Asynchronous Execution (Embassy)**:
+1. **Embedded Constraints (`no_std`)**:
+   - The target environment is strictly `#![no_std]` and `#![no_main]`. Dynamic memory allocation (`alloc`) is **disabled**; all resources must be statically allocated. Use `StaticCell` for dynamic structures that require `'static` lifetimes.
+2. **Dual Library/Binary Architecture & Host Testing**:
+   - `src/lib.rs` exports decoupled modules (`protocol`, `car_control`, `motor_control`, `indicator`) with target-gated Cortex-M dependencies, enabling fast host-based unit tests (`cargo test --lib --target x86_64-unknown-linux-gnu`) without requiring target hardware.
+   - `src/board.rs` encapsulates RP2040 GPIO pins, PWM slices, DMA channels, and CYW43 wireless initialization into a dedicated Board Support Package (BSP).
+3. **Autonomous Command Watchdog & Disconnection Failsafe**:
+   - `CarControl::run` enforces an autonomous 500ms watchdog timeout (`embassy_time::with_timeout`). If no drive command is received within 500ms, or when a GATT disconnection occurs, motors are immediately halted to prevent runaway vehicle behavior.
+4. **Resilient Motor Control Loop**:
+   - Actuator driver errors (`PwmError`) are safely caught in `CarControl::run`, motor duty cycles are zeroed, and the task continues listening for subsequent commands without terminating.
+5. **Asynchronous Execution (Embassy)**:
    - Always prefer asynchronous execution over busy-waiting loops.
    - Use `embassy_time::Timer` for delays (`Timer::after_secs(1).await` or `Timer::after_millis(x).await`).
-3. **Hardware & PWM Drivers**:
+6. **Hardware & PWM Drivers**:
    - Motor driving is implemented via RP2040 hardware PWM slices (`PWM_SLICE0` for PIN_0/PIN_1 and `PWM_SLICE1` for PIN_2/PIN_3).
    - Low-level actuation uses raw `u16` duty cycles and an explicit `Direction` enum (`Forward`, `Reverse`) in `MotorControl`, mapping forward motion to direction pin LOW and reverse to HIGH with inverted duty (`max_duty - duty`).
    - `CarControl` decomposes incoming signed `i32` commands from characteristic `fff1` into `(duty: u16, direction: Direction)` tuples via `split_speed()`.
    - Ensure fully-off state is explicitly set via `set_duty_cycle_fully_off()` (or `stop()`) to prevent motor creep.
-4. **Diagnostic Logging**:
+7. **Diagnostic Logging**:
    - Never print to `stdout`/`stderr` using standard macros. Always use `defmt::info!`, `defmt::debug!`, `defmt::warn!`, or `defmt::error!`.
-5. **BLE Handling**:
+8. **Status Indication & BLE Handling**:
    - The BLE peripheral runs via `trouble-host` stack inside `ble_peripheral::run()`.
-   - Onboard LED (PIN_15) toggles state during BLE advertising, connection, and disconnection events to provide visual diagnostics.
+   - `indicator::indicator_task` drives the onboard status LED (PIN_15) based on `PeripheralState` signals:
+     - `Advertising`: 500ms on / 500ms off blinking.
+     - `Connected`: Solid ON.
+     - `Disconnected`: Rapid flash (100ms on / 100ms off) before returning to advertising.
 
 ### 🤖 Android Application (Kotlin)
 

@@ -23,7 +23,7 @@
 
 ## 5. System Orchestration & Final Verification
 
-- [ ] 5.1 Refactor `src/main.rs` to cleanly initialize the board and spawn `cyw43_task`, `car_control_task`, `indicator_task`, and `ble_peripheral::run`
-- [ ] 5.2 Run complete unit test suite on host (`cargo test --lib --target x86_64-unknown-linux-gnu`) and verify 100% test pass
-- [ ] 5.3 Verify full firmware build passes syntax and release compilation using `cargo check --target thumbv6m-none-eabi` and `cargo build --release --target thumbv6m-none-eabi`
-- [ ] 5.4 Update `GEMINI.md` documentation to document the refactored module structure, test execution commands, watchdog behavior, and indicator states
+- [x] 5.1 Refactor `src/main.rs` to cleanly initialize the board and spawn `cyw43_task`, `car_control_task`, `indicator_task`, and `ble_peripheral::run`
+- [x] 5.2 Run complete unit test suite on host (`cargo test --lib --target x86_64-unknown-linux-gnu`) and verify 100% test pass
+- [x] 5.3 Verify full firmware build passes syntax and release compilation using `cargo check --target thumbv6m-none-eabi` and `cargo build --release --target thumbv6m-none-eabi`
+- [x] 5.4 Update `GEMINI.md` documentation to document the refactored module structure, test execution commands, watchdog behavior, and indicator states
