@@ -3,7 +3,23 @@ name = "tricycletops-fw"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+name = "tricycletops_fw"
+path = "src/lib.rs"
+
+[[bin]]
+name = "tricycletops-fw"
+path = "src/main.rs"
+test = false
+
 [dependencies]
+embassy-sync = { version = "0.8.0" }
+embassy-futures = { version = "0.1.2", features = ["defmt"] }
+static_cell = "2.1.0"
+portable-atomic = { version = "1.5.1", features = ["critical-section"] }
+defmt = "1.1.1"
+
+[target.'cfg(all(target_arch = "arm", target_os = "none"))'.dependencies]
 embassy-executor = { version = "0.10.0", features = [
     "platform-cortex-m",
     "executor-thread",
@@ -21,25 +37,13 @@ embassy-time = { version = "0.5.0", features = [
     "defmt-timestamp-uptime",
     "defmt",
 ] }
-embassy-sync = { version = "0.8.0" }
-
-# Bluetooth
 cyw43 = { version = "0.7.0", features = ["defmt", "firmware-logs", "bluetooth"] }
 cyw43-pio = { version = "0.10.0", features = ["defmt"] }
 trouble-host = { version = "0.7.0", features = ["defmt", "gatt", "derive"] }
-static_cell = "2.1.0"
-portable-atomic = { version = "1.5.1", features = ["critical-section"] }
-
 cortex-m = { version = "0.7.6", features = ["inline-asm"] }
 cortex-m-rt = "0.7.0"
-# critical-section = "1.1"
-
-# defmt Logging
-defmt = "1.1.1"
 defmt-rtt = "1.1.0"
-
 panic-probe = { version = "1.0.0", features = ["print-defmt"] }
-embassy-futures = { version = "0.1.2", features = ["defmt"] }
 
 [build-dependencies]
 reqwest = { version = "0.13.4", features = ["blocking"]}

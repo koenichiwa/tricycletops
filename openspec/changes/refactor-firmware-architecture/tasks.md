@@ -2,7 +2,7 @@
 
 ## 1. Testable Library Architecture & Gating
 
-- [ ] 1.1 Configure dual `[lib]` and `[[bin]]` layout with target-gated Cortex-M dependencies in `tricycletops-fw/Cargo.toml` and verify host test runner with `cargo test --lib --target x86_64-unknown-linux-gnu`
+- [x] 1.1 Configure dual `[lib]` and `[[bin]]` layout with target-gated Cortex-M dependencies in `tricycletops-fw/Cargo.toml` and verify host test runner with `cargo test --lib --target x86_64-unknown-linux-gnu`
 - [ ] 1.2 Create `src/lib.rs` exporting testable modules (`protocol`, `car_control`, `motor_control`, `indicator`, `board`, `ble_peripheral`)
 
 ## 2. Protocol & Kinematics with Unit Tests
