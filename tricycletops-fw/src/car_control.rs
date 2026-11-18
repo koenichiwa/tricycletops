@@ -1,15 +1,8 @@
-#[cfg(all(target_arch = "arm", target_os = "none"))]
 use defmt::{info, warn};
-#[cfg(all(target_arch = "arm", target_os = "none"))]
-use embassy_rp::pwm::PwmError;
-#[cfg(all(target_arch = "arm", target_os = "none"))]
-use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, signal::Signal};
-#[cfg(all(target_arch = "arm", target_os = "none"))]
+use embassy_sync::{blocking_mutex::raw::RawMutex, signal::Signal};
 use embassy_time::{Duration, with_timeout};
 
-use crate::motor_control::Direction;
-#[cfg(all(target_arch = "arm", target_os = "none"))]
-use crate::motor_control::MotorControl;
+use crate::motor_control::{Direction, Motor};
 
 pub const LEFT_MOTOR_MIN_DUTY: u16 = 200;
 pub const RIGHT_MOTOR_MIN_DUTY: u16 = 200;
@@ -20,15 +13,25 @@ pub struct DriveCommand {
     pub right: i32,
 }
 
-#[cfg(all(target_arch = "arm", target_os = "none"))]
-pub struct CarControl<'a> {
-    left_motor: MotorControl<'a>,
-    right_motor: MotorControl<'a>,
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CarControlError<L, R> {
+    LeftMotor(L),
+    RightMotor(R),
+}
+
+pub struct CarControl<L, R> {
+    left_motor: L,
+    right_motor: R,
 }
 
 #[cfg(all(target_arch = "arm", target_os = "none"))]
-impl<'a> CarControl<'a> {
-    pub const fn new(left_motor: MotorControl<'a>, right_motor: MotorControl<'a>) -> Self {
+pub type TargetCarControl = CarControl<
+    crate::motor_control::MotorControl<'static>,
+    crate::motor_control::MotorControl<'static>,
+>;
+
+impl<L: Motor, R: Motor> CarControl<L, R> {
+    pub const fn new(left_motor: L, right_motor: R) -> Self {
         Self {
             left_motor,
             right_motor,
@@ -46,25 +49,51 @@ impl<'a> CarControl<'a> {
 
     /// Set individual speeds for left and right motors.
     /// Inputs should be integers between -max_duty and max_duty.
-    pub fn set_speeds(&mut self, left_speed: i32, right_speed: i32) -> Result<(), PwmError> {
+    pub fn set_speeds(
+        &mut self,
+        left_speed: i32,
+        right_speed: i32,
+    ) -> Result<(), CarControlError<L::Error, R::Error>> {
         let (left_duty, left_dir) = split_speed(left_speed, self.left_motor.max_duty());
         let (right_duty, right_dir) = split_speed(right_speed, self.right_motor.max_duty());
 
-        self.left_motor.set_duty(left_duty, left_dir)?;
-        self.right_motor.set_duty(right_duty, right_dir)?;
+        self.left_motor
+            .set_duty(left_duty, left_dir)
+            .map_err(CarControlError::LeftMotor)?;
+        self.right_motor
+            .set_duty(right_duty, right_dir)
+            .map_err(CarControlError::RightMotor)?;
 
         Ok(())
     }
 
-    pub fn stop(&mut self) -> Result<(), PwmError> {
-        self.left_motor.stop()?;
-        self.right_motor.stop()?;
+    pub fn stop(&mut self) -> Result<(), CarControlError<L::Error, R::Error>> {
+        let left_res = self.left_motor.stop().map_err(CarControlError::LeftMotor);
+        let right_res = self.right_motor.stop().map_err(CarControlError::RightMotor);
+        left_res?;
+        right_res?;
         Ok(())
     }
 
-    pub async fn run(
+    pub fn left_motor(&self) -> &L {
+        &self.left_motor
+    }
+
+    pub fn right_motor(&self) -> &R {
+        &self.right_motor
+    }
+
+    pub fn left_motor_mut(&mut self) -> &mut L {
+        &mut self.left_motor
+    }
+
+    pub fn right_motor_mut(&mut self) -> &mut R {
+        &mut self.right_motor
+    }
+
+    pub async fn run<M: RawMutex>(
         &mut self,
-        drive_command_signal: &'static Signal<ThreadModeRawMutex, DriveCommand>,
+        drive_command_signal: &'static Signal<M, DriveCommand>,
     ) -> ! {
         const WATCHDOG_TIMEOUT: Duration = Duration::from_millis(500);
 
@@ -76,7 +105,10 @@ impl<'a> CarControl<'a> {
                         cmd.left, cmd.right
                     );
                     if let Err(err) = self.set_speeds(cmd.left, cmd.right) {
-                        warn!("PWM error setting speeds: {:?}", defmt::Debug2Format(&err));
+                        warn!(
+                            "Motor error setting speeds: {:?}",
+                            defmt::Debug2Format(&err)
+                        );
                         let _ = self.stop();
                     }
                 }
@@ -154,5 +186,63 @@ mod tests {
         let (duty, dir) = split_speed(-2500, 2500);
         assert_eq!(duty, 2500);
         assert_eq!(dir, Direction::Reverse);
+    }
+
+    use crate::motor_control::MockMotor;
+
+    #[test]
+    fn test_car_control_duty_limits() {
+        let left = MockMotor::new(2500);
+        let right = MockMotor::new(3000);
+        let car = CarControl::new(left, right);
+        let limits = car.duty_limits();
+        assert_eq!(limits.left_min, 200);
+        assert_eq!(limits.left_max, 2500);
+        assert_eq!(limits.right_min, 200);
+        assert_eq!(limits.right_max, 3000);
+    }
+
+    #[test]
+    fn test_car_control_set_speeds() {
+        let left = MockMotor::new(2500);
+        let right = MockMotor::new(2500);
+        let mut car = CarControl::new(left, right);
+
+        assert!(car.set_speeds(1000, -1500).is_ok());
+        assert_eq!(car.left_motor().current_duty, 1000);
+        assert_eq!(car.left_motor().current_direction, Direction::Forward);
+        assert!(!car.left_motor().stopped);
+
+        assert_eq!(car.right_motor().current_duty, 1500);
+        assert_eq!(car.right_motor().current_direction, Direction::Reverse);
+        assert!(!car.right_motor().stopped);
+    }
+
+    #[test]
+    fn test_car_control_stop() {
+        let left = MockMotor::new(2500);
+        let right = MockMotor::new(2500);
+        let mut car = CarControl::new(left, right);
+
+        assert!(car.set_speeds(1000, 1000).is_ok());
+        assert!(car.stop().is_ok());
+        assert!(car.left_motor().stopped);
+        assert_eq!(car.left_motor().current_duty, 0);
+        assert!(car.right_motor().stopped);
+        assert_eq!(car.right_motor().current_duty, 0);
+    }
+
+    #[test]
+    fn test_car_control_motor_error() {
+        let left = MockMotor::new(2500);
+        let mut right = MockMotor::new(2500);
+        right.fail_set_duty = true;
+        let mut car = CarControl::new(left, right);
+
+        let res = car.set_speeds(1000, 1000);
+        assert_eq!(
+            res,
+            Err(CarControlError::RightMotor("mock motor set_duty failed"))
+        );
     }
 }

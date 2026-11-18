@@ -10,7 +10,7 @@ use panic_probe as _;
 
 use tricycletops_fw::ble_peripheral;
 use tricycletops_fw::board::{self, Board};
-use tricycletops_fw::car_control::{CarControl, DriveCommand};
+use tricycletops_fw::car_control::{CarControl, DriveCommand, TargetCarControl};
 use tricycletops_fw::indicator::{self, PeripheralState};
 
 // Signals
@@ -18,7 +18,7 @@ static CAR_COMMAND_SIGNAL: Signal<ThreadModeRawMutex, DriveCommand> = Signal::ne
 static INDICATOR_SIGNAL: Signal<ThreadModeRawMutex, PeripheralState> = Signal::new();
 
 #[embassy_executor::task]
-async fn car_control_task(mut car: CarControl<'static>) -> ! {
+async fn car_control_task(mut car: TargetCarControl) -> ! {
     car.run(&CAR_COMMAND_SIGNAL).await
 }
 

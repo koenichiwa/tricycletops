@@ -7,7 +7,7 @@
 
 ## 2. Decoupled CarControl Domain Logic & Kinematics
 
-- [ ] 2.1 Refactor `CarControl<L: Motor, R: Motor>` in `src/car_control.rs` to remove RP2040-specific imports, enabling pure `#![no_std]` compilation on host.
+- [x] 2.1 Refactor `CarControl<L: Motor, R: Motor>` in `src/car_control.rs` to remove RP2040-specific imports, enabling pure `#![no_std]` compilation on host.
 - [ ] 2.2 Add `IndicatorState` signaling in `CarControl::run` on 500ms watchdog timeout and actuator errors, and verify state transitions and motor stop logic using `MockMotor` in host unit tests (`cargo test --lib`).
 
 ## 3. Declarative Indicator State Machine
