@@ -2,8 +2,8 @@
 
 ## 1. Hardware Abstraction & Motor Driver
 
-- [ ] 1.1 Define the `Motor` trait and `Direction` enum in `src/motor_control.rs`, provide `MockMotor` for tests, and verify unit tests pass on host (`cargo test --lib --target x86_64-unknown-linux-gnu`).
-- [ ] 1.2 Implement `Motor` for RP2040 `MotorControl` using `embassy_rp` PWM and GPIO output pins, and verify target compilation (`cargo check --target thumbv6m-none-eabi`).
+- [x] 1.1 Define the `Motor` trait and `Direction` enum in `src/motor_control.rs`, provide `MockMotor` for tests, and verify unit tests pass on host (`cargo test --lib --target x86_64-unknown-linux-gnu`).
+- [x] 1.2 Implement `Motor` for RP2040 `MotorControl` using `embassy_rp` PWM and GPIO output pins, and verify target compilation (`cargo check --target thumbv6m-none-eabi`).
 
 ## 2. Decoupled CarControl Domain Logic & Kinematics
 
