@@ -73,18 +73,27 @@ pub struct MotorControl<'a> {
 ```
 All existing methods (`set_duty`, `stop`, `max_duty`) invoke `SetDutyCycle` methods on `self.speed_pin`, preserving identical behavior and the existing `Motor` trait contract.
 
-### Decision 4: Staged Dependency Upgrade Tiers
+### Decision 4: Dependency Source Precedence, Scratch File Tracking & Incremental Updates
 
-Dependency updates in `Cargo.toml` are isolated from driver logic changes and divided into two tiers:
-1. **Tier 1 (Core & Primitives)**:
-   - `cortex-m`: 0.7.6 → 0.7.10
-   - `cortex-m-rt`: 0.7.0 → 0.7.7
-   - `static_cell`: 2.1.0 → 2.1.1
-   - `portable-atomic`: 1.5.1 → 1.15.0
-   - `reqwest` (build): 0.13.4 → 0.13.5
-2. **Tier 2 (Defmt & RTT Logging)**:
-   - `defmt`: 1.1.1 → 1.2.0
-   - `defmt-rtt`: 1.1.0 → 1.3.1
+Dependency updates in `Cargo.toml` are applied incrementally, one (minor) version at a time, across staged risk tiers:
+- **Source Precedence**:
+  1. **Primary**: Upstream Embassy RP example configuration (`https://raw.githubusercontent.com/embassy-rs/embassy/refs/heads/main/examples/rp/Cargo.toml`). Versions and features specified here take absolute precedence over crates.io.
+  2. **Secondary**: crates.io for standalone packages not specified in Embassy's RP example.
+- **Scratch File & Reference Caching**:
+  - Discovered target versions are recorded into a temporary scratch file (`.target_versions.scratch`) during online discovery.
+  - Selected upstream Embassy RP code examples (`pwm.rs`, `blinky.rs`, `usb_logger.rs`, `watchdog.rs`) are fetched into `.examples.scratch/` to provide immediate local reference for syntax, macro, and HAL patterns. (Hardware watchdog from `watchdog.rs` remains out of scope for car command watchdog timeouts to prevent unwanted MCU reboots on joystick release).
+  - Both `.target_versions.scratch` and `.examples.scratch/` are uncommitted and cleaned up in Task 3.2.
+- **Incremental Cadence**:
+  Updates proceed one minor version at a time. If compilation breaks, the issue is diagnosed and fixed before moving forward.
+- **Breakage Remediation & Upstream Reference**:
+  If breaking changes or compilation errors occur, the agent consults the local reference examples in `.examples.scratch/` and any additional examples discovered via:
+  ```bash
+  curl -s "https://api.github.com/repos/embassy-rs/embassy/contents/examples/rp/src/bin?ref=main" | jq '.[] | {path, download_url}'
+  ```
+  to inspect and mirror current upstream usage patterns.
+- **Tiers**:
+  1. **Tier 1 (Core & Primitives)**: `cortex-m`, `cortex-m-rt`, `static_cell`, `portable-atomic`, `reqwest` (build).
+  2. **Tier 2 (Defmt & RTT Logging)**: `defmt`, `defmt-rtt`.
 
 ### Decision 5: Interactive Hardware Test Cards
 
