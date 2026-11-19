@@ -29,6 +29,10 @@ To compile and flash Rust firmware to the RP2040 micro-controller, install the f
     rustup target add thumbv6m-none-eabi
     ```
 *   **Picotool**: Required to flash the RP2040 board over a USB cable without a debugger. Follow the [Raspberry Pi Picotool Installation Guide](https://github.com/raspberrypi/picotool) to compile or install it on your OS.
+*   **defmt-print**: Host utility to decode and stream real-time firmware logs over USB serial:
+    ```bash
+    cargo install defmt-print
+    ```
 *   **Probe-rs (Optional)**: If you use a physical SWD debug probe (like another Pico running Picoprobe), install [probe-rs](https://probe.rs/) to flash and debug in real-time.
 
 ### 2. Android App Tooling (`tricycletops-app`)
@@ -132,9 +136,17 @@ Characteristic `fff2` exposes the minimum (deadband) and maximum PWM duty cycle 
 
 ## 🛠️ Diagnostics & Logs
 
-The firmware outputs highly optimized debug logs over RTT (Real-Time Transfer).
-*   If using `probe-rs`, logs will stream directly to your terminal.
-*   The onboard LED on the Raspberry Pi Pico W indicates peripheral operational state:
+The firmware outputs structured binary diagnostic logs using `defmt` transported over USB CDC-ACM serial (virtual COM port) without requiring an external hardware debugger.
+
+*   **Streaming Live Logs over USB Serial**:
+    Connect the Pico W to your development machine with a USB cable and run `defmt-print`:
+    ```bash
+    defmt-print -e tricycletops-fw/target/thumbv6m-none-eabi/release/tricycletops-fw serial --path /dev/ttyACM0 --dtr
+    ```
+    *(Note: On macOS, replace `/dev/ttyACM0` with `/dev/tty.usbmodem*`)*
+*   **SWD Debugger (Optional)**: If using `probe-rs`, logs will stream directly to your terminal.
+*   **Onboard Status LED**:
+    The onboard LED on the Raspberry Pi Pico W indicates peripheral operational state:
     - **Advertising**: 1Hz blinking (500ms ON / 500ms OFF).
     - **Connected**: Solid ON when actively connected and controlled.
     - **Failsafe**: 5Hz rapid blinking (100ms ON / 100ms OFF) if the 500ms command watchdog times out or a motor actuator error occurs.

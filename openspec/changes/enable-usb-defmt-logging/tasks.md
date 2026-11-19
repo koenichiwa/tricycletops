@@ -12,4 +12,4 @@
 
 ## 3. Developer Documentation & Tooling Workflow
 
-- [ ] 3.1 Update `README.md` and `GEMINI.md` with instructions on installing `defmt-print` and streaming live logs over `/dev/ttyACM0` via USB serial, and verify documentation matches actual project workflow.
+- [x] 3.1 Update `README.md` and `GEMINI.md` with instructions on installing `defmt-print` and streaming live logs over `/dev/ttyACM0` via USB serial, and verify documentation matches actual project workflow.

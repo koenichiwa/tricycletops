@@ -68,7 +68,11 @@ All firmware commands must be run inside the `tricycletops-fw/` directory:
   ```
   *Note: The runner command is defined in `.cargo/config.toml`. Ensure the Pico W is in BOOTSEL mode (hold button while plugging in USB).*
 * **Debugging & Log Stream**:
-  The firmware uses `defmt` over RTT (Real-Time Transfer). Logs are streamed to the terminal when using `probe-rs run --chip RP2040`.
+  The firmware streams structured `defmt` logs over USB CDC-ACM serial (`/dev/ttyACM0`). Install `defmt-print` (`cargo install defmt-print`) and view live logs:
+  ```bash
+  defmt-print -e target/thumbv6m-none-eabi/release/tricycletops-fw serial --path /dev/ttyACM0 --dtr
+  ```
+  *(Optional: If debugging with an external SWD probe, logs can also be streamed using `probe-rs run --chip RP2040`.)*
 
 ### 📱 Android Application (`tricycletops-app`)
 
@@ -131,6 +135,7 @@ Run these checks before finalizing changes to ensure CI and pre-commit hooks pas
    - Ensure fully-off state is explicitly set via `set_duty_cycle_fully_off()` (or `stop()`) to prevent motor creep.
 7. **Diagnostic Logging**:
    - Never print to `stdout`/`stderr` using standard macros. Always use `defmt::info!`, `defmt::debug!`, `defmt::warn!`, or `defmt::error!`.
+   - Diagnostic logs are transported via USB CDC-ACM (`defmt-embassy-usbserial`) and streamed on the host using `defmt-print`.
 8. **Status Indication & BLE Handling**:
    - The BLE peripheral runs via `trouble-host` stack inside `ble_peripheral::run()`.
    - `indicator::indicator_task` drives the onboard status LED (PIN_15) based on `IndicatorState` signals:

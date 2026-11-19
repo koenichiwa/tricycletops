@@ -99,4 +99,3 @@ This work is licensed, at your option, under the
 
  - [MIT License](/LICENSE-MIT)
  - [Mozilla Public License Version 2.0](/LICENSE-MPL)
- 
