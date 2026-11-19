@@ -1,0 +1,43 @@
+[package]
+name = "defmt-embassy-usbserial"
+description = "Transmit defmt log messages over USB serial"
+version = "0.2.1"
+edition = "2024"
+readme = "README.md"
+repository = "https://github.com/robjwells/defmt-embassy-usbserial"
+license = "MIT OR MPL-2.0"
+publish = true
+categories = ["development-tools::debugging", "embedded", "no-std"]
+keywords = ["defmt", "embedded", "logging", "usb"]
+
+[dependencies]
+critical-section = "1"
+defmt = "1"
+embassy-futures = "0.1"
+embassy-time = "0.5"
+embassy-usb = "0.5"
+portable-atomic = "1"
+static_cell = "2"
+
+# These are for compiling the embassy-rp example in the documentation.
+[dev-dependencies]
+cortex-m-rt = "0.7"
+embassy-executor = { version = "0.9", features = [
+    "arch-cortex-m",
+    "executor-thread",
+    "executor-interrupt",
+] }
+embassy-rp = { version = "0.8", features = ["rp2040"] }
+embedded-hal-async = "1"
+panic-halt = "1"
+portable-atomic = { version = "1", features = ["default", "critical-section"] }
+
+[features]
+
+default = ["buffersize-256"]
+
+buffersize-64 = []
+buffersize-128 = []
+buffersize-256 = []
+buffersize-512 = []
+buffersize-1024 = []

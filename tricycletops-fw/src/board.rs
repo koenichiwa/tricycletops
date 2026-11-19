@@ -9,7 +9,7 @@ use embassy_rp::gpio::{Level, Output};
 use embassy_rp::peripherals::{DMA_CH0, DMA_CH1, PIO0, USB};
 use embassy_rp::pio::{InterruptHandler as PioInterruptHandler, Pio};
 use embassy_rp::pwm::{Config as PwmConfig, Pwm};
-use embassy_rp::usb::{Driver as UsbDriver, InterruptHandler as UsbInterruptHandler};
+use embassy_rp::usb::InterruptHandler as UsbInterruptHandler;
 use embassy_rp::{
     bind_interrupts, dma::Channel as DmaChannel, dma::InterruptHandler as DmaInterruptHandler,
 };
@@ -28,6 +28,7 @@ static CYW43_STATE: StaticCell<cyw43::State> = StaticCell::new();
 
 pub type Cyw43Runner =
     cyw43::Runner<'static, cyw43::SpiBus<Output<'static>, PioSpi<'static, PIO0, 0>>, Cyw43439>;
+pub type UsbDriver = embassy_rp::usb::Driver<'static, USB>;
 
 #[embassy_executor::task]
 pub async fn cyw43_task(runner: Cyw43Runner) -> ! {
@@ -40,7 +41,7 @@ pub struct Board {
     pub led_pin: Output<'static>,
     pub ble_controller: ExternalController<BtDriver<'static>, 10>,
     pub cyw43_runner: Cyw43Runner,
-    pub usb_driver: UsbDriver<'static, USB>,
+    pub usb_driver: UsbDriver,
 }
 
 impl Board {
