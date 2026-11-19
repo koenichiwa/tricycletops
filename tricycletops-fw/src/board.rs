@@ -6,9 +6,10 @@ use cyw43::bluetooth::BtDriver;
 use cyw43::{Cyw43439, aligned_bytes};
 use cyw43_pio::PioSpi;
 use embassy_rp::gpio::{Level, Output};
-use embassy_rp::peripherals::{DMA_CH0, DMA_CH1, PIO0};
+use embassy_rp::peripherals::{DMA_CH0, DMA_CH1, PIO0, USB};
 use embassy_rp::pio::{InterruptHandler as PioInterruptHandler, Pio};
 use embassy_rp::pwm::{Config as PwmConfig, Pwm};
+use embassy_rp::usb::{Driver as UsbDriver, InterruptHandler as UsbInterruptHandler};
 use embassy_rp::{
     bind_interrupts, dma::Channel as DmaChannel, dma::InterruptHandler as DmaInterruptHandler,
 };
@@ -20,6 +21,7 @@ use crate::motor_control::MotorControl;
 bind_interrupts!(struct Irqs {
     PIO0_IRQ_0 => PioInterruptHandler<PIO0>;
     DMA_IRQ_0 => DmaInterruptHandler<DMA_CH0>, DmaInterruptHandler<DMA_CH1>;
+    USBCTRL_IRQ => UsbInterruptHandler<USB>;
 });
 
 static CYW43_STATE: StaticCell<cyw43::State> = StaticCell::new();
@@ -38,6 +40,7 @@ pub struct Board {
     pub led_pin: Output<'static>,
     pub ble_controller: ExternalController<BtDriver<'static>, 10>,
     pub cyw43_runner: Cyw43Runner,
+    pub usb_driver: UsbDriver<'static, USB>,
 }
 
 impl Board {
@@ -86,6 +89,7 @@ impl Board {
         control.init(clm).await;
 
         let ble_controller = ExternalController::new(bt_device);
+        let usb_driver = UsbDriver::new(p.USB, Irqs);
 
         Self {
             left_motor,
@@ -93,6 +97,7 @@ impl Board {
             led_pin,
             ble_controller,
             cyw43_runner,
+            usb_driver,
         }
     }
 }

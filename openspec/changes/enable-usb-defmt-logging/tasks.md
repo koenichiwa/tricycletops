@@ -3,7 +3,7 @@
 ## 1. Dependencies & BSP Hardware Integration
 
 - [x] 1.1 Update `tricycletops-fw/Cargo.toml` to replace `defmt-rtt` with `defmt-embassy-usbserial` and `embassy-usb`, and verify that cargo resolves dependencies cleanly with `cargo check --target thumbv6m-none-eabi`.
-- [ ] 1.2 Update `tricycletops-fw/src/board.rs` to bind `USBCTRL_IRQ => InterruptHandler<USB>` in `bind_interrupts!`, initialize the USB driver in `Board::init()`, and verify compilation with `cargo check --target thumbv6m-none-eabi`.
+- [x] 1.2 Update `tricycletops-fw/src/board.rs` to bind `USBCTRL_IRQ => InterruptHandler<USB>` in `bind_interrupts!`, initialize the USB driver in `Board::init()`, and verify compilation with `cargo check --target thumbv6m-none-eabi`.
 
 ## 2. USB Logger Task & Firmware Spawning
 
