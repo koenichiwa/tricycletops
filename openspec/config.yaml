@@ -12,6 +12,7 @@ operations:
       - Check if the build compiles and relevant tests pass before archiving a change.
       - "The user explicitly authorizes git commits: After archiving, author a conventional commit (docs(openspec): archive <name>) containing a summary of the archive outcome."
       - Ensure `README.md` and `GEMINI.md` reflect any protocol specification changes before archiving.
+      - Ensure 'GEMINI.md' is optimized for Gemini clients. Keep content concise.
 
 
 
