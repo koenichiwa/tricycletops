@@ -86,18 +86,6 @@ impl<'a> MotorControl<'a> {
             direction_pin,
         }
     }
-
-    pub fn max_duty(&self) -> u16 {
-        <Self as Motor>::max_duty(self)
-    }
-
-    pub fn set_duty(&mut self, duty: u16, direction: Direction) -> Result<(), PwmError> {
-        <Self as Motor>::set_duty(self, duty, direction)
-    }
-
-    pub fn stop(&mut self) -> Result<(), PwmError> {
-        <Self as Motor>::stop(self)
-    }
 }
 
 #[cfg(all(target_arch = "arm", target_os = "none"))]
