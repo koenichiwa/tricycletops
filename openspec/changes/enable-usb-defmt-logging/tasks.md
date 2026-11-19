@@ -8,7 +8,7 @@
 ## 2. USB Logger Task & Firmware Spawning
 
 - [x] 2.1 Implement the background USB CDC-ACM logger task with `defmt_embassy_usbserial::run`, spawn it in `main.rs` during board startup, and remove the `defmt_rtt as _` import.
-- [ ] 2.2 Verify firmware compilation (`cargo build --release --target thumbv6m-none-eabi`), verify host unit tests (`cargo test-host`), and ensure linter/formatter compliance (`cargo fmt --check` and `cargo clippy --target thumbv6m-none-eabi`).
+- [x] 2.2 Verify firmware compilation (`cargo build --release --target thumbv6m-none-eabi`), verify host unit tests (`cargo test-host`), and ensure linter/formatter compliance (`cargo fmt --check` and `cargo clippy --target thumbv6m-none-eabi`).
 
 ## 3. Developer Documentation & Tooling Workflow
 
