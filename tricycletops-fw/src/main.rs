@@ -2,7 +2,7 @@
 #![no_main]
 
 use defmt::info;
-use defmt_rtt as _;
+use defmt_embassy_usbserial as _;
 use embassy_executor::Spawner;
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::signal::Signal;
