@@ -19,11 +19,11 @@
 
 ## 4. Incremental Group Upgrade Execution
 
-- [ ] 4.1 Incrementally update each crate group from `.scratch.crate_groups` by executing the upgrade cycle (Steps 5.1–5.8 in `design.md`) until all groups reach their target versions. Follow the contract in `design.md` to the letter
-- [ ] 4.2 Verify all completion criteria in `design.md` Procedure Step 6 are satisfied
+- [x] 4.1 Incrementally update each crate group from `.scratch.crate_groups` by executing the upgrade cycle (Steps 5.1–5.8 in `design.md`) until all groups reach their target versions. Follow the contract in `design.md` to the letter
+- [x] 4.2 Verify all completion criteria in `design.md` Procedure Step 6 are satisfied
 
 ## 5. Finalization & Repository Verification
 
-- [ ] 5.1 Verify final `Cargo.toml` and `Cargo.lock` against `.scratch.target_versions.txt`
-- [ ] 5.2 Remove `.scratch.*` and backup files, ensuring a clean git working tree
-- [ ] 5.3 Run full repository checks: `cargo build --release --target thumbv6m-none-eabi`, `cargo test-host`, `cargo fmt --check`, and `cargo clippy --target thumbv6m-none-eabi`
+- [x] 5.1 Verify final `Cargo.toml` and `Cargo.lock` against `.scratch.target_versions.txt`
+- [x] 5.2 Remove `.scratch.*` and backup files, ensuring a clean git working tree
+- [x] 5.3 Run full repository checks: `cargo build --release --target thumbv6m-none-eabi`, `cargo test-host`, `cargo fmt --check`, and `cargo clippy --target thumbv6m-none-eabi`
