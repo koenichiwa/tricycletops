@@ -7,7 +7,7 @@
 
 ## 2. Firmware Integration & Verification
 
-- [x] 2.1 Revert `main.rs`, `car_control.rs`, and `ble_peripheral.rs` to `defmt::*` macros, configure USB device builder and spawn the `usb_logger` CDC task in `main.rs`.
+- [x] 2.1 Revert `main.rs`, `car_control.rs`, and `ble_peripheral.rs` to `defmt::*` macros, encapsulate USB builder and `logger_task` in `src/usb_logger.rs`, and spawn it in `main.rs`.
 - [x] 2.2 Verify firmware compilation (`cargo build --release --target thumbv6m-none-eabi`), verify host unit tests (`cargo test-host`), and ensure linter/formatter compliance (`cargo fmt --check` and `cargo clippy --target thumbv6m-none-eabi`).
 
 ## 3. Developer Documentation & Tooling Workflow

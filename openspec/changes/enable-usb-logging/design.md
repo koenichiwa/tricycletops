@@ -27,11 +27,12 @@ Community projects like [`sunipkm/embassy-defmt-usb`](https://github.com/sunipkm
 ## Decisions
 
 ### 1. In-Tree Defmt USB Transport (`src/usb_logger.rs`) with `embassy-usb`
-- **Decision:** Build a minimal, zero-external-dependency crate/module under `src/usb_logger.rs` implementing `#[defmt::global_logger]` and a CDC-ACM worker using `embassy-usb`.
+- **Decision:** Build a minimal, zero-external-dependency crate/module under `src/usb_logger.rs` implementing `#[defmt::global_logger]`, USB builder initialization, and an Embassy executor task (`logger_task`) using `embassy-usb`.
 - **Rationale:**
   - `defmt::global_logger` requires implementing `acquire`, `release`, and `write` methods that capture encoded log frames into an internal buffer.
   - An asynchronous worker task drains this buffer to an `embassy_usb::class::cdc_acm::CdcAcmClass` endpoint (`Sender`).
-  - Keeping this in-tree (~120–160 lines of code) provides complete compatibility with our exact pinned Embassy revisions while avoiding third-party crate abandonment or bit rot.
+  - Encapsulating the USB builder and `#[embassy_executor::task] pub async fn logger_task(driver: UsbDriver) -> !` in `src/usb_logger.rs` eliminates boilerplate from `main.rs`, aligning with the architecture of `board::cyw43_task` and `indicator::indicator_task`.
+  - Keeping this in-tree provides complete compatibility with our exact pinned Embassy revisions while avoiding third-party crate abandonment or bit rot.
 - **Architectural Inspiration from Community Reference Crates:**
   - **`sunipkm/embassy-defmt-usb`**: Inspires the buffering strategy (double-buffering / frame buffer swapping upon completion to minimize critical-section contention) and clean CDC-ACM USB descriptor layout.
   - **`robjwells/defmt-embassy-usbserial`**: Inspires the modular CDC-ACM drain loop using `embassy_usb::class::cdc_acm::Sender`, explicit connection lifecycle handling (`sender.wait_connection().await`), and non-blocking packet transmission handling across bus resets and unread ports.
