@@ -343,3 +343,9 @@ pub async fn run<D: Driver<'static>>(driver: D) -> ! {
     let cdc_fut = cdc_task(sender);
     match embassy_futures::join::join(usb_fut, cdc_fut).await {}
 }
+
+/// Embassy executor task that runs the USB device and CDC-ACM logger.
+#[embassy_executor::task]
+pub async fn logger_task(driver: crate::board::UsbDriver) -> ! {
+    run(driver).await
+}
