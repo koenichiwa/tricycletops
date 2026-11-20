@@ -29,11 +29,9 @@ To compile and flash Rust firmware to the RP2040 micro-controller, install the f
     rustup target add thumbv6m-none-eabi
     ```
 *   **Picotool**: Required to flash the RP2040 board over a USB cable without a debugger. Follow the [Raspberry Pi Picotool Installation Guide](https://github.com/raspberrypi/picotool) to compile or install it on your OS.
-*   **Serial Monitor (Optional)**: To monitor live plaintext logs over USB serial, you can use any standard serial terminal tool such as `cat`, `tio`, `minicom`, or `screen`:
+*   **Defmt Tooling (`defmt-print`)**: Required to stream and decode live binary `defmt` logs over USB CDC-ACM serial:
     ```bash
-    # e.g., using tio
-    sudo apt install tio  # Linux
-    brew install tio      # macOS
+    cargo install defmt-print
     ```
 *   **Probe-rs (Optional)**: If you use a physical SWD debug probe (like another Pico running Picoprobe), install [probe-rs](https://probe.rs/) to flash and debug in real-time.
 
@@ -138,16 +136,14 @@ Characteristic `fff2` exposes the minimum (deadband) and maximum PWM duty cycle 
 
 ## 🛠️ Diagnostics & Logs
 
-The firmware outputs real-time plaintext diagnostic logs over USB CDC-ACM serial (virtual COM port `/dev/ttyACM0`) using `embassy-usb-logger` and the standard `log` facade without requiring external binary decoding tools.
+The firmware outputs real-time `defmt` diagnostic logs over USB CDC-ACM serial (virtual COM port `/dev/ttyACM0`) using an in-tree USB transport, unifying application, BLE host (`trouble-host`), Wi-Fi/Bluetooth driver (`cyw43`), and panic traces under a single high-efficiency binary protocol.
 
 *   **Streaming Live Logs over USB Serial**:
-    Connect the Pico W to your development machine with a USB cable and view logs using standard serial tools:
+    Connect the Pico W to your development machine with a USB cable and decode live logs using `defmt-print`:
     ```bash
-    cat /dev/ttyACM0
-    # or using tio
-    tio /dev/ttyACM0
+    defmt-print -e target/thumbv6m-none-eabi/release/tricycletops-fw serial --path /dev/ttyACM0 --dtr
     ```
-    *(Note: On macOS, replace `/dev/ttyACM0` with `/dev/tty.usbmodem*`)*
+    *(Note: For debug profile builds, replace `release` with `debug`. On macOS, replace `/dev/ttyACM0` with `/dev/tty.usbmodem*`.)*
 *   **SWD Debugger (Optional)**: If using `probe-rs`, logs will stream directly to your terminal.
 *   **Onboard Status LED**:
     The onboard LED on the Raspberry Pi Pico W indicates peripheral operational state:
