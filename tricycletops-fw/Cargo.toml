@@ -17,6 +17,7 @@ embassy-sync = { version = "0.8.0" }
 embassy-futures = { version = "0.1.2", features = ["defmt"] }
 static_cell = "2.1.0"
 portable-atomic = { version = "1.5.1", features = ["critical-section"] }
+critical-section = "1.2"
 defmt = "1.1.1"
 log = "0.4.28"
 

@@ -2,7 +2,7 @@
 
 ## 1. In-Tree Defmt USB Transport (`src/usb_logger.rs`)
 
-- [ ] 1.1 Implement the in-tree `defmt` USB transport under `src/usb_logger.rs` implementing `#[defmt::global_logger]` and an async CDC-ACM drain task using `embassy-usb`, taking inspiration from `sunipkm/embassy-defmt-usb` (buffering strategy) and `robjwells/defmt-embassy-usbserial` (CDC-ACM sender loop).
+- [x] 1.1 Implement the in-tree `defmt` USB transport under `src/usb_logger.rs` implementing `#[defmt::global_logger]` and an async CDC-ACM drain task using `embassy-usb`, taking inspiration from `sunipkm/embassy-defmt-usb` (buffering strategy) and `robjwells/defmt-embassy-usbserial` (CDC-ACM sender loop).
 - [ ] 1.2 Update `tricycletops-fw/Cargo.toml` to remove `embassy-usb-logger` and `log`, and verify dependency compilation with `cargo check --target thumbv6m-none-eabi`.
 
 ## 2. Firmware Integration & Verification
