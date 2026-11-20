@@ -1,8 +1,8 @@
-use defmt::{info, warn};
 use embassy_futures::join::join;
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::signal::Signal;
 use embassy_time::Timer;
+use log::{info, warn};
 use trouble_host::prelude::*;
 
 use crate::car_control::CarCommand;
@@ -75,10 +75,7 @@ pub async fn run<C>(
                     .await;
                 }
                 Err(e) => {
-                    warn!(
-                        "[adv] advertising failed: {:?}, retrying...",
-                        defmt::Debug2Format(&e)
-                    );
+                    warn!("[adv] advertising failed: {:?}, retrying...", e);
                     Timer::after_millis(100).await;
                 }
             }
@@ -91,10 +88,7 @@ pub async fn run<C>(
 async fn ble_task<C: Controller, P: PacketPool>(mut runner: Runner<'_, C, P>) {
     loop {
         if let Err(e) = runner.run().await {
-            warn!(
-                "[ble_task] runner error: {:?}, retrying...",
-                defmt::Debug2Format(&e)
-            );
+            warn!("[ble_task] runner error: {:?}, retrying...", e);
             Timer::after_millis(100).await;
         }
     }

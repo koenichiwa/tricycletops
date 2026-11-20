@@ -1,6 +1,6 @@
-use defmt::{info, warn};
 use embassy_sync::{blocking_mutex::raw::RawMutex, signal::Signal};
 use embassy_time::{Duration, with_timeout};
+use log::{info, warn};
 
 use crate::motor_control::{Direction, Motor};
 
@@ -160,18 +160,12 @@ impl<L: Motor, R: Motor> CarControl<L, R> {
                         if let Err(err) =
                             self.handle_command(cmd, indicator_signal, &mut in_failsafe)
                         {
-                            warn!(
-                                "Motor error setting speeds: {:?}",
-                                defmt::Debug2Format(&err)
-                            );
+                            warn!("Motor error setting speeds: {:?}", err);
                         }
                     }
                     CarCommand::Disconnected => {
                         if let Err(err) = self.handle_disconnect(&mut in_failsafe) {
-                            warn!(
-                                "Motor error during disconnect: {:?}",
-                                defmt::Debug2Format(&err)
-                            );
+                            warn!("Motor error during disconnect: {:?}", err);
                         }
                     }
                 }
@@ -185,19 +179,13 @@ impl<L: Motor, R: Motor> CarControl<L, R> {
                         if let Err(err) =
                             self.handle_command(cmd, indicator_signal, &mut in_failsafe)
                         {
-                            warn!(
-                                "Motor error setting speeds: {:?}",
-                                defmt::Debug2Format(&err)
-                            );
+                            warn!("Motor error setting speeds: {:?}", err);
                         }
                     }
                     Ok(CarCommand::Disconnected) => {
                         has_received_command = false;
                         if let Err(err) = self.handle_disconnect(&mut in_failsafe) {
-                            warn!(
-                                "Motor error during disconnect: {:?}",
-                                defmt::Debug2Format(&err)
-                            );
+                            warn!("Motor error during disconnect: {:?}", err);
                         }
                     }
                     Err(_) => {

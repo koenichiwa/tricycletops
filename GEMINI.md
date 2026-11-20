@@ -68,9 +68,11 @@ All firmware commands must be run inside the `tricycletops-fw/` directory:
   ```
   *Note: The runner command is defined in `.cargo/config.toml`. Ensure the Pico W is in BOOTSEL mode (hold button while plugging in USB).*
 * **Debugging & Log Stream**:
-  The firmware streams structured `defmt` logs over USB CDC-ACM serial (`/dev/ttyACM0`). Install `defmt-print` (`cargo install defmt-print`) and view live logs:
+  The firmware streams plaintext logs over USB CDC-ACM serial (`/dev/ttyACM0`) via `embassy-usb-logger`. View live logs using standard serial utilities:
   ```bash
-  defmt-print -e target/thumbv6m-none-eabi/release/tricycletops-fw serial --path /dev/ttyACM0 --dtr
+  cat /dev/ttyACM0
+  # or
+  tio /dev/ttyACM0
   ```
   *(Optional: If debugging with an external SWD probe, logs can also be streamed using `probe-rs run --chip RP2040`.)*
 
@@ -134,8 +136,8 @@ Run these checks before finalizing changes to ensure CI and pre-commit hooks pas
    - `CarControl` decomposes incoming signed `i32` commands from characteristic `fff1` into `(duty: u16, direction: Direction)` tuples via `split_speed()`.
    - Ensure fully-off state is explicitly set via `set_duty_cycle_fully_off()` (or `stop()`) to prevent motor creep.
 7. **Diagnostic Logging**:
-   - Never print to `stdout`/`stderr` using standard macros. Always use `defmt::info!`, `defmt::debug!`, `defmt::warn!`, or `defmt::error!`.
-   - Diagnostic logs are transported via USB CDC-ACM (`defmt-embassy-usbserial`) and streamed on the host using `defmt-print`.
+   - Never print to `stdout`/`stderr` using standard macros. Always use `log::info!`, `log::debug!`, `log::warn!`, or `log::error!`.
+   - Diagnostic logs are transported via USB CDC-ACM (`embassy-usb-logger`) in plaintext and streamed on the host using standard serial tools (`cat /dev/ttyACM0`, `tio /dev/ttyACM0`).
 8. **Status Indication & BLE Handling**:
    - The BLE peripheral runs via `trouble-host` stack inside `ble_peripheral::run()`.
    - `indicator::indicator_task` drives the onboard status LED (PIN_15) based on `IndicatorState` signals:

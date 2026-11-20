@@ -1,11 +1,11 @@
 #![no_std]
 #![no_main]
 
-use defmt::info;
-use defmt_embassy_usbserial as _;
+use defmt_rtt as _;
 use embassy_executor::Spawner;
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::signal::Signal;
+use log::info;
 use panic_probe as _;
 
 use tricycletops_fw::ble_peripheral;
@@ -24,19 +24,7 @@ async fn car_control_task(mut car: TargetCarControl) -> ! {
 
 #[embassy_executor::task]
 async fn logger_task(driver: board::UsbDriver) {
-    let mut config = embassy_usb::Config::new(0xc0de, 0xcafe);
-    config.manufacturer = Some("Tricycletops");
-    config.product = Some("Tricycletops Defmt Logger");
-    config.serial_number = Some("12345678");
-    config.max_packet_size_0 = 64;
-
-    // Required CDC settings for composite/IAD compliance
-    config.composite_with_iads = true;
-    config.device_class = 0xEF;
-    config.device_sub_class = 0x02;
-    config.device_protocol = 0x01;
-
-    defmt_embassy_usbserial::run(driver, config).await;
+    embassy_usb_logger::run!(1024, log::LevelFilter::Info, driver);
 }
 
 #[embassy_executor::main]
