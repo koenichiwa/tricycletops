@@ -383,3 +383,201 @@ pub async fn run<D: Driver<'static>>(driver: D) -> ! {
 pub async fn logger_task(driver: crate::board::UsbDriver) -> ! {
     run(driver).await
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_log_buffer_write_within_capacity() {
+        let mut buf = LogBuffer::new();
+        assert_eq!(buf.cursor(), 0);
+        assert_eq!(buf.remaining(), BUFFER_SIZE);
+
+        let data = [0x5au8; 100];
+        let written = buf.write(&data);
+        assert_eq!(written, 100);
+        assert_eq!(buf.cursor(), 100);
+        assert_eq!(buf.remaining(), BUFFER_SIZE - 100);
+        assert_eq!(buf.data(), &data[..]);
+    }
+
+    #[test]
+    fn test_log_buffer_write_overflow_clamps_and_reset() {
+        let mut buf = LogBuffer::new();
+        let payload1 = [0x11u8; BUFFER_SIZE - 10];
+        assert_eq!(buf.write(&payload1), BUFFER_SIZE - 10);
+
+        let payload2 = [0x22u8; 50];
+        // Only 10 bytes remaining
+        assert_eq!(buf.write(&payload2), 10);
+        assert_eq!(buf.remaining(), 0);
+        assert_eq!(buf.cursor(), BUFFER_SIZE);
+
+        // Subsequent writes return 0
+        assert_eq!(buf.write(&[0x33; 10]), 0);
+
+        buf.reset();
+        assert_eq!(buf.cursor(), 0);
+        assert_eq!(buf.remaining(), BUFFER_SIZE);
+        assert_eq!(buf.data().len(), 0);
+    }
+
+    #[test]
+    fn test_controller_single_chunk_extraction() {
+        let mut ctrl = Controller::new();
+        assert!(!ctrl.is_flush_pending());
+
+        let payload = [1, 2, 3, 4, 5, 6, 7, 8];
+        ctrl.write(&payload);
+        ctrl.on_frame_end();
+        assert!(ctrl.is_flush_pending());
+
+        let mut read_cursor = 0;
+        let chunk = ctrl.get_chunk(&mut read_cursor, MAX_PACKET_SIZE);
+        assert_eq!(chunk.len, payload.len());
+        assert!(chunk.done);
+        assert_eq!(&chunk.data[..chunk.len], &payload);
+        assert!(!ctrl.is_flush_pending());
+
+        // Further reads return empty done chunk
+        let next_chunk = ctrl.get_chunk(&mut read_cursor, MAX_PACKET_SIZE);
+        assert_eq!(next_chunk.len, 0);
+        assert!(next_chunk.done);
+    }
+
+    #[test]
+    fn test_controller_exact_max_packet_size_chunk() {
+        let mut ctrl = Controller::new();
+        let payload = [0xaau8; MAX_PACKET_SIZE];
+        ctrl.write(&payload);
+        ctrl.on_frame_end();
+        assert!(ctrl.is_flush_pending());
+
+        let mut read_cursor = 0;
+        let chunk = ctrl.get_chunk(&mut read_cursor, MAX_PACKET_SIZE);
+        assert_eq!(chunk.len, MAX_PACKET_SIZE);
+        assert!(chunk.done);
+        assert_eq!(&chunk.data[..chunk.len], &payload);
+        assert!(!ctrl.is_flush_pending());
+    }
+
+    #[test]
+    fn test_controller_multi_chunk_extraction() {
+        let mut ctrl = Controller::new();
+        // 150 bytes: 64 + 64 + 22 bytes
+        let mut payload = [0u8; 150];
+        for (i, b) in payload.iter_mut().enumerate() {
+            *b = (i % 256) as u8;
+        }
+
+        ctrl.write(&payload);
+        ctrl.on_frame_end();
+        assert!(ctrl.is_flush_pending());
+
+        let mut read_cursor = 0;
+        let chunk1 = ctrl.get_chunk(&mut read_cursor, MAX_PACKET_SIZE);
+        assert_eq!(chunk1.len, 64);
+        assert!(!chunk1.done);
+        assert_eq!(&chunk1.data[..64], &payload[0..64]);
+
+        let chunk2 = ctrl.get_chunk(&mut read_cursor, MAX_PACKET_SIZE);
+        assert_eq!(chunk2.len, 64);
+        assert!(!chunk2.done);
+        assert_eq!(&chunk2.data[..64], &payload[64..128]);
+
+        let chunk3 = ctrl.get_chunk(&mut read_cursor, MAX_PACKET_SIZE);
+        assert_eq!(chunk3.len, 22);
+        assert!(chunk3.done);
+        assert_eq!(&chunk3.data[..22], &payload[128..150]);
+
+        assert!(!ctrl.is_flush_pending());
+    }
+
+    #[test]
+    fn test_controller_double_buffering_swap() {
+        let mut ctrl = Controller::new();
+
+        let data1 = [0x11u8; 50];
+        ctrl.write(&data1);
+        ctrl.on_frame_end();
+        assert!(ctrl.is_flush_pending());
+
+        // Write data into the active alternate buffer while buffer 1 is awaiting flush
+        let data2 = [0x22u8; 30];
+        ctrl.write(&data2);
+
+        // Drain buffer 1
+        let mut read_cursor = 0;
+        let chunk1 = ctrl.get_chunk(&mut read_cursor, MAX_PACKET_SIZE);
+        assert_eq!(chunk1.len, 50);
+        assert!(chunk1.done);
+        assert_eq!(&chunk1.data[..50], &data1);
+
+        // Alternate buffer automatically becomes flush pending
+        assert!(ctrl.is_flush_pending());
+
+        // Drain buffer 2
+        let chunk2 = ctrl.get_chunk(&mut read_cursor, MAX_PACKET_SIZE);
+        assert_eq!(chunk2.len, 30);
+        assert!(chunk2.done);
+        assert_eq!(&chunk2.data[..30], &data2);
+
+        assert!(!ctrl.is_flush_pending());
+    }
+
+    #[test]
+    fn test_controller_drop_on_overflow() {
+        let mut ctrl = Controller::new();
+
+        // Fill buffer 0 (1024 bytes)
+        let fill_buf0 = [0xaa; BUFFER_SIZE];
+        ctrl.write(&fill_buf0);
+
+        // Writing one more byte triggers buffer swap to buffer 1 and marks flush pending
+        let overflow_bytes = [0xbb; 100];
+        ctrl.write(&overflow_bytes);
+        assert!(ctrl.is_flush_pending());
+
+        // Fill remainder of buffer 1
+        let fill_buf1 = [0xcc; BUFFER_SIZE - 100];
+        ctrl.write(&fill_buf1);
+
+        // Both buffers are now completely full (2048 bytes buffered total).
+        // Additional writes must be safely dropped without panic or blocking.
+        let dropped_data = [0xff; 500];
+        ctrl.write(&dropped_data);
+
+        // Drain buffer 0: exactly 1024 bytes (16 chunks of 64 bytes)
+        let mut read_cursor = 0;
+        for i in 0..16 {
+            let chunk = ctrl.get_chunk(&mut read_cursor, MAX_PACKET_SIZE);
+            assert_eq!(chunk.len, 64);
+            assert_eq!(chunk.done, i == 15);
+            assert_eq!(chunk.data, [0xaa; 64]);
+        }
+
+        // Buffer 1 now automatically pending
+        assert!(ctrl.is_flush_pending());
+
+        // Drain first 100 bytes of buffer 1 (chunk of 64 bytes + chunk of 36 bytes)
+        let chunk_b1 = ctrl.get_chunk(&mut read_cursor, MAX_PACKET_SIZE);
+        assert_eq!(chunk_b1.len, 64);
+        assert_eq!(chunk_b1.data, [0xbb; 64]);
+
+        let chunk_b2 = ctrl.get_chunk(&mut read_cursor, 36);
+        assert_eq!(chunk_b2.len, 36);
+        assert_eq!(&chunk_b2.data[..36], &[0xbb; 36]);
+    }
+
+    #[test]
+    fn test_controller_reset_on_disconnect() {
+        let mut ctrl = Controller::new();
+        ctrl.write(&[1, 2, 3, 4]);
+        ctrl.on_frame_end();
+        assert!(ctrl.is_flush_pending());
+
+        ctrl.reset_on_disconnect();
+        assert!(!ctrl.is_flush_pending());
+    }
+}
