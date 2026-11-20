@@ -15,6 +15,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -33,8 +34,8 @@ class VehicleControlRepositoryImpl(
     override val connectionState: StateFlow<VehicleConnectionState> = gattClient.connectionState
 
     private var lastSentTime = 0L
-    private var pendingVector: JoystickVector? = null
-    private var throttleJob: Job? = null
+    private var activeVector: JoystickVector? = null
+    private var streamJob: Job? = null
     private val throttleMutex = Mutex()
 
     override fun startScan() {
@@ -61,29 +62,21 @@ class VehicleControlRepositoryImpl(
         }
 
         throttleMutex.withLock {
-            pendingVector = joystick
-            val now = timeProvider()
-            val elapsed = now - lastSentTime
-
-            if (elapsed >= throttleIntervalMs) {
-                throttleJob?.cancel()
-                throttleJob = null
+            activeVector = joystick
+            if (streamJob == null || !streamJob!!.isActive) {
                 sendDriveCommand(joystick)
-                lastSentTime = now
-                pendingVector = null
-            } else if (throttleJob == null || !throttleJob!!.isActive) {
-                val remainingDelay = throttleIntervalMs - elapsed
-                throttleJob =
+                lastSentTime = timeProvider()
+                streamJob =
                     scope.launch {
-                        delay(remainingDelay)
-                        throttleMutex.withLock {
-                            val vectorToSend = pendingVector
-                            if (vectorToSend != null && !vectorToSend.isZero) {
-                                sendDriveCommand(vectorToSend)
-                                lastSentTime = timeProvider()
+                        while (isActive) {
+                            delay(throttleIntervalMs)
+                            throttleMutex.withLock {
+                                val vectorToSend = activeVector
+                                if (isActive && vectorToSend != null && !vectorToSend.isZero) {
+                                    sendDriveCommand(vectorToSend)
+                                    lastSentTime = timeProvider()
+                                }
                             }
-                            pendingVector = null
-                            throttleJob = null
                         }
                     }
             }
@@ -92,9 +85,9 @@ class VehicleControlRepositoryImpl(
 
     override suspend fun stopImmediate() {
         throttleMutex.withLock {
-            throttleJob?.cancel()
-            throttleJob = null
-            pendingVector = null
+            streamJob?.cancel()
+            streamJob = null
+            activeVector = null
             gattClient.writeDriveCommand(MotorDriveCommand.STOP)
             lastSentTime = timeProvider()
         }

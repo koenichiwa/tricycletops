@@ -38,7 +38,7 @@ In the Android application (`tricycletops-app`), `detectDragGestures` in Jetpack
 
 ## Risks / Trade-offs
 
-- **[Risk]** Coroutine cancellation timing in rapid drag/release sequences.  
+- **[Risk]** Coroutine cancellation timing in rapid drag/release sequences.
   → **Mitigation**: Synchronize vector updates, stream job cancellation, and stop command transmission under the repository's `throttleMutex` to prevent race conditions.
-- **[Risk]** Test execution timing in unit tests.  
+- **[Risk]** Test execution timing in unit tests.
   → **Mitigation**: Use existing virtual clock / `timeProvider` and structured coroutine delays so unit tests can assert exact packet counts across virtual and simulated time.

@@ -176,6 +176,36 @@ class VehicleControlRepositoryImplTest {
     }
 
     @Test
+    fun `drive periodically retransmits keep-alive commands during stationary active holds`() = runBlocking {
+        repository.drive(JoystickVector(x = 0f, y = 1.0f))
+        assertEquals(1, fakeGattClient.writtenCommands.size)
+
+        // Wait for 2 throttle intervals (40ms each)
+        Thread.sleep(95)
+
+        // Initial command + 1st tick at 40ms + 2nd tick at 80ms = 3 commands total
+        assertEquals(3, fakeGattClient.writtenCommands.size)
+        assertTrue(fakeGattClient.writtenCommands.all { it.leftDuty == 1000 && it.rightDuty == 1000 })
+    }
+
+    @Test
+    fun `release cancels keep-alive stream and prevents further transmissions`() = runBlocking {
+        repository.drive(JoystickVector(x = 0f, y = 1.0f))
+        assertEquals(1, fakeGattClient.writtenCommands.size)
+
+        // Release joystick
+        repository.drive(JoystickVector.ZERO)
+        assertEquals(2, fakeGattClient.writtenCommands.size)
+        assertTrue(fakeGattClient.writtenCommands.last().isStop)
+
+        // Wait for what would have been the next tick
+        Thread.sleep(50)
+
+        // No additional commands should have been sent
+        assertEquals(2, fakeGattClient.writtenCommands.size)
+    }
+
+    @Test
     fun `drive scales using custom duty limits from connected vehicle state`() = runBlocking {
         val vehicle = DiscoveredVehicle(name = "Tricycletops", address = "AA:BB:CC:DD:EE:FF", rssi = -50)
         val customLimits =
