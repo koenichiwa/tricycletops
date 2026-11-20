@@ -75,10 +75,7 @@ pub async fn run<C>(
                     .await;
                 }
                 Err(e) => {
-                    warn!(
-                        "[adv] advertising failed: {:?}, retrying...",
-                        defmt::Debug2Format(&e)
-                    );
+                    warn!("[adv] advertising failed: {:?}, retrying...", &e);
                     Timer::after_millis(100).await;
                 }
             }
@@ -91,10 +88,7 @@ pub async fn run<C>(
 async fn ble_task<C: Controller, P: PacketPool>(mut runner: Runner<'_, C, P>) {
     loop {
         if let Err(e) = runner.run().await {
-            warn!(
-                "[ble_task] runner error: {:?}, retrying...",
-                defmt::Debug2Format(&e)
-            );
+            warn!("[ble_task] runner error: {:?}, retrying...", &e);
             Timer::after_millis(100).await;
         }
     }
@@ -145,16 +139,13 @@ async fn gatt_events_task<P: PacketPool>(
                 // in order to ensure reply is sent.
                 match reply {
                     Ok(reply) => reply.send().await,
-                    Err(e) => warn!(
-                        "[gatt] error sending response: {:?}",
-                        defmt::Debug2Format(&e)
-                    ),
+                    Err(e) => warn!("[gatt] error sending response: {:?}", &e),
                 }
             }
             _ => {} // ignore other Gatt Connection Events
         }
     };
-    info!("[gatt] disconnected: {:?}", defmt::Debug2Format(&reason));
+    info!("[gatt] disconnected: {:?}", &reason);
     Ok(())
 }
 
