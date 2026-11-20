@@ -110,7 +110,7 @@ When the firmware boots, the Raspberry Pi Pico W acts as a Bluetooth Low Energy 
 *   **Drive Characteristic UUID**: `fff1` (`0000fff1-0000-1000-8000-00805f9b34fb`, Read / Write, 8-byte payload)
 *   **Duty Limits Characteristic UUID**: `fff2` (`0000fff2-0000-1000-8000-00805f9b34fb`, Read, 8-byte payload)
 
-> 📖 **Authoritative Specification**: The single source of truth for BLE protocols, packet codecs, differential drive kinematics, deadband handling, throttling (25Hz), and safety failsafes is defined in [`openspec/specs/remote-car-control/spec.md`](openspec/specs/remote-car-control/spec.md).
+> 📖 **Authoritative Specification**: The single source of truth for BLE protocols, packet codecs, differential drive kinematics, deadband handling, throttling and keep-alive (25Hz), and safety failsafes is defined in [`openspec/specs/remote-car-control/spec.md`](openspec/specs/remote-car-control/spec.md).
 
 ### Drive Command Payload (8 Bytes - Characteristic `fff1`)
 

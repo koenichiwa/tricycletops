@@ -12,7 +12,7 @@
 
 ## 📡 BLE Control Specification
 
-> 📖 **Authoritative Specification**: [`openspec/specs/remote-car-control/spec.md`](openspec/specs/remote-car-control/spec.md) is the single definitive source of truth for BLE protocols, packet codecs, differential drive kinematics, deadband handling, throttling (25Hz), and safety behaviors. The tables below serve only as a concise lookup reference.
+> 📖 **Authoritative Specification**: [`openspec/specs/remote-car-control/spec.md`](openspec/specs/remote-car-control/spec.md) is the single definitive source of truth for BLE protocols, packet codecs, differential drive kinematics, deadband handling, throttling and keep-alive (25Hz), and safety behaviors. The tables below serve only as a concise lookup reference.
 
 The firmware implements a GATT peripheral advertising the local name `Tricycletops` with a specific control service.
 
