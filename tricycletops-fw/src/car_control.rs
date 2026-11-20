@@ -1,7 +1,13 @@
 use defmt::{info, warn};
+#[cfg(all(target_arch = "arm", target_os = "none"))]
+use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::{blocking_mutex::raw::RawMutex, signal::Signal};
 use embassy_time::{Duration, with_timeout};
 
+#[cfg(all(target_arch = "arm", target_os = "none"))]
+use crate::indicator::IndicatorState;
+#[cfg(all(target_arch = "arm", target_os = "none"))]
+use crate::motor_control::MotorControl;
 use crate::motor_control::{Direction, Motor};
 
 pub const LEFT_MOTOR_MIN_DUTY: u16 = 200;
@@ -29,12 +35,6 @@ pub struct CarControl<L, R> {
     left_motor: L,
     right_motor: R,
 }
-
-#[cfg(all(target_arch = "arm", target_os = "none"))]
-pub type TargetCarControl = CarControl<
-    crate::motor_control::MotorControl<'static>,
-    crate::motor_control::MotorControl<'static>,
->;
 
 impl<L: Motor, R: Motor> CarControl<L, R> {
     pub const fn new(left_motor: L, right_motor: R) -> Self {
@@ -208,6 +208,16 @@ impl<L: Motor, R: Motor> CarControl<L, R> {
             }
         }
     }
+}
+
+#[cfg(all(target_arch = "arm", target_os = "none"))]
+#[embassy_executor::task]
+pub async fn car_control_task(
+    mut car: CarControl<MotorControl<'static>, MotorControl<'static>>,
+    command_signal: &'static Signal<ThreadModeRawMutex, CarCommand>,
+    indicator_signal: &'static Signal<ThreadModeRawMutex, IndicatorState>,
+) -> ! {
+    car.run(command_signal, indicator_signal).await
 }
 
 pub fn split_speed(speed: i32, max_duty: u16) -> (u16, Direction) {
