@@ -158,7 +158,7 @@ use {
     core::future::poll_fn,
     core::sync::atomic::{AtomicBool, Ordering},
     core::task::Poll,
-    embassy_usb::class::cdc_acm::{CdcAcmClass, Sender, State},
+    embassy_usb::class::cdc_acm::device::{CdcAcmClass, Config as CdcAcmConfig, Sender, State},
     embassy_usb::driver::{Driver, EndpointError},
     embassy_usb::{Builder, Config, UsbDevice},
     static_cell::StaticCell,
@@ -392,7 +392,7 @@ pub fn init_usb<D: Driver<'static>>(driver: D) -> (UsbDevice<'static, D>, Sender
     );
 
     let state = STATE.init(State::new());
-    let class = CdcAcmClass::new(&mut builder, state, 64);
+    let class = CdcAcmClass::new(&mut builder, state, CdcAcmConfig::default());
     let (sender, _) = class.split();
 
     let usb = builder.build();

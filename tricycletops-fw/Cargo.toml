@@ -16,12 +16,12 @@ test = false
 embassy-sync = { version = "0.8.0" }
 embassy-futures = { version = "0.1.2", features = ["defmt"] }
 static_cell = "2.1.0"
-portable-atomic = { version = "1.5.1", features = ["critical-section"] }
+portable-atomic = { version = "1.15.0", features = ["critical-section"] }
 critical-section = "1.2"
-defmt = "1.1.1"
+defmt = "1.2.0"
 
 [target.'cfg(not(all(target_arch = "arm", target_os = "none")))'.dependencies]
-embassy-time = { version = "0.5.0", features = ["generic-queue-64"] }
+embassy-time = { version = "0.5.1", features = ["generic-queue-64"] }
 
 [target.'cfg(not(all(target_arch = "arm", target_os = "none")))'.dev-dependencies]
 critical-section = { version = "1.2", features = ["std"] }
@@ -40,15 +40,15 @@ embassy-rp = { version = "0.10.0", features = [
     "rp2040",
     "defmt",
 ]}
-embassy-time = { version = "0.5.0", features = [
+embassy-time = { version = "0.5.1", features = [
     "defmt-timestamp-uptime",
     "defmt",
 ] }
 cyw43 = { version = "0.7.0", features = ["defmt", "firmware-logs", "bluetooth"] }
 cyw43-pio = { version = "0.10.0", features = ["defmt"] }
-trouble-host = { version = "0.7.0", features = ["defmt", "gatt", "derive"] }
-cortex-m = { version = "0.7.6", features = ["inline-asm"] }
-cortex-m-rt = "0.7.0"
+trouble-host = { version = "0.8.0", features = ["defmt", "gatt", "derive"] }
+cortex-m = { version = "0.7.10", features = ["inline-asm"] }
+cortex-m-rt = "0.7.7"
 embassy-usb = { version = "0.6.0", features = ["defmt"] }
 panic-probe = { version = "1.0.0", features = ["print-defmt"] }
 
@@ -56,10 +56,10 @@ panic-probe = { version = "1.0.0", features = ["print-defmt"] }
 reqwest = { version = "0.13.5", features = ["blocking"]}
 
 [patch.crates-io]
-cyw43 = { version = "0.7.0", git = "https://github.com/embassy-rs/embassy.git", rev = "1d3c3de"}
-cyw43-pio = { version = "0.10.0", git = "https://github.com/embassy-rs/embassy.git", rev = "1d3c3de"}
-embassy-rp = { version = "0.10.0", git = "https://github.com/embassy-rs/embassy.git", rev = "1d3c3de"}
-embassy-sync = { version = "0.8.0", git = "https://github.com/embassy-rs/embassy.git", rev = "1d3c3de"}
-embassy-executor = { version = "0.10.0", git = "https://github.com/embassy-rs/embassy.git", rev = "1d3c3de"}
-embassy-time = { version = "0.5.1", git = "https://github.com/embassy-rs/embassy.git", rev = "1d3c3de"}
-embassy-usb = { version = "0.6.0", git = "https://github.com/embassy-rs/embassy.git", rev = "1d3c3de"}
+cyw43 = { version = "0.7.0", git = "https://github.com/embassy-rs/embassy.git", rev = "0bf016d305431fcf6fb00be248ab608dca009168" }
+cyw43-pio = { version = "0.10.0", git = "https://github.com/embassy-rs/embassy.git", rev = "0bf016d305431fcf6fb00be248ab608dca009168" }
+embassy-rp = { version = "0.10.0", git = "https://github.com/embassy-rs/embassy.git", rev = "0bf016d305431fcf6fb00be248ab608dca009168" }
+embassy-sync = { version = "0.8.0", git = "https://github.com/embassy-rs/embassy.git", rev = "0bf016d305431fcf6fb00be248ab608dca009168" }
+embassy-executor = { version = "0.10.0", git = "https://github.com/embassy-rs/embassy.git", rev = "0bf016d305431fcf6fb00be248ab608dca009168" }
+embassy-time = { version = "0.5.1", git = "https://github.com/embassy-rs/embassy.git", rev = "0bf016d305431fcf6fb00be248ab608dca009168" }
+embassy-usb = { version = "0.6.0", git = "https://github.com/embassy-rs/embassy.git", rev = "0bf016d305431fcf6fb00be248ab608dca009168" }

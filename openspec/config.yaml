@@ -3,9 +3,9 @@ schema: spec-driven
 operations:
   apply:
     guidance:
-      - "The user explicitly authorizes git commits: Author a conventional commit after completing a task that introduces changes."
-      - Check if the build compiles before committing code changes, and run relevant tests.
-      - If code changes intentionally span multiple tasks to compile, defer committing until the dependent task passes; otherwise, fix failures before proceeding.
+      # - "The user explicitly authorizes git commits: Author a conventional commit after completing a task that introduces changes."
+      # - Check if the build compiles before committing code changes, and run relevant tests.
+      # - If code changes intentionally span multiple tasks to compile, defer committing until the dependent task passes; otherwise, fix failures before proceeding.
       - Keep `README.md` and `GEMINI.md` in sync whenever protocol specifications change.
   archive:
     guidance:

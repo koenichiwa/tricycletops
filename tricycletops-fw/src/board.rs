@@ -87,7 +87,7 @@ impl Board {
         let state = CYW43_STATE.init(cyw43::State::new());
         let (_net_device, bt_device, mut control, cyw43_runner) =
             cyw43::new_with_bluetooth(state, pwr, spi, fw, btfw, nvram).await;
-        control.init(clm).await;
+        control.init(clm, cyw43::Config::default()).await;
 
         let ble_controller = ExternalController::new(bt_device);
         let usb_driver = UsbDriver::new(p.USB, Irqs);

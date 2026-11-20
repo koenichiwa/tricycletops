@@ -1,0 +1,761 @@
+tricycletops-fw v0.1.0 (/home/koen/Projects/tricycletops/tricycletops-fw)
+├── cortex-m v0.7.7
+│   ├── bare-metal v0.2.5
+│   │   [build-dependencies]
+│   │   └── rustc_version v0.2.3
+│   │       └── semver v0.9.0
+│   │           └── semver-parser v0.7.0
+│   ├── bitfield v0.13.2
+│   ├── embedded-hal v0.2.7
+│   │   ├── nb v0.1.3
+│   │   │   └── nb v1.1.0
+│   │   └── void v1.0.2
+│   └── volatile-register v0.2.2
+│       └── vcell v0.1.3
+├── cortex-m-rt v0.7.5
+│   └── cortex-m-rt-macros v0.7.5 (proc-macro)
+│       ├── proc-macro2 v1.0.107
+│       │   └── unicode-ident v1.0.24
+│       ├── quote v1.0.47
+│       │   └── proc-macro2 v1.0.107 (*)
+│       └── syn v2.0.119
+│           ├── proc-macro2 v1.0.107 (*)
+│           ├── quote v1.0.47 (*)
+│           └── unicode-ident v1.0.24
+├── critical-section v1.2.0
+├── cyw43 v0.7.0 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec)
+│   ├── aligned v0.4.3
+│   │   └── as-slice v0.2.1
+│   │       └── stable_deref_trait v1.2.1
+│   ├── bt-hci v0.9.0
+│   │   ├── btuuid v0.1.1
+│   │   │   ├── defmt v0.3.100
+│   │   │   │   └── defmt v1.1.1
+│   │   │   │       ├── bitflags v1.3.2
+│   │   │   │       └── defmt-macros v1.1.1 (proc-macro)
+│   │   │   │           ├── defmt-parser v1.0.0
+│   │   │   │           │   └── thiserror v2.0.19
+│   │   │   │           │       └── thiserror-impl v2.0.19 (proc-macro)
+│   │   │   │           │           ├── proc-macro2 v1.0.107 (*)
+│   │   │   │           │           ├── quote v1.0.47 (*)
+│   │   │   │           │           └── syn v3.0.3
+│   │   │   │           │               ├── proc-macro2 v1.0.107 (*)
+│   │   │   │           │               ├── quote v1.0.47 (*)
+│   │   │   │           │               └── unicode-ident v1.0.24
+│   │   │   │           ├── proc-macro2 v1.0.107 (*)
+│   │   │   │           ├── quote v1.0.47 (*)
+│   │   │   │           └── syn v2.0.119 (*)
+│   │   │   └── uuid v1.24.0
+│   │   ├── defmt v1.1.1 (*)
+│   │   ├── embassy-sync v0.8.0 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec)
+│   │   │   ├── cfg-if v1.0.4
+│   │   │   ├── critical-section v1.2.0
+│   │   │   ├── embedded-io-async v0.7.0
+│   │   │   │   ├── defmt v1.1.1 (*)
+│   │   │   │   └── embedded-io v0.7.1
+│   │   │   │       └── defmt v1.1.1 (*)
+│   │   │   ├── futures-core v0.3.33
+│   │   │   ├── futures-sink v0.3.33
+│   │   │   └── heapless v0.9.3
+│   │   │       ├── defmt v1.1.1 (*)
+│   │   │       ├── hash32 v0.3.1
+│   │   │       │   └── byteorder v1.5.0
+│   │   │       └── stable_deref_trait v1.2.1
+│   │   ├── embedded-io v0.7.1 (*)
+│   │   ├── embedded-io-async v0.7.0 (*)
+│   │   ├── futures-intrusive v0.5.0
+│   │   │   ├── futures-core v0.3.33
+│   │   │   └── lock_api v0.4.14
+│   │   │       └── scopeguard v1.2.0
+│   │   └── heapless v0.9.3 (*)
+│   ├── cortex-m v0.7.7 (*)
+│   ├── cortex-m-rt v0.7.5 (*)
+│   ├── defmt v1.1.1 (*)
+│   ├── embassy-futures v0.1.2 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec)
+│   ├── embassy-hal-internal v0.5.0 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec)
+│   │   ├── aligned v0.4.3 (*)
+│   │   ├── as-slice v0.2.1 (*)
+│   │   ├── cortex-m v0.7.7 (*)
+│   │   ├── critical-section v1.2.0
+│   │   ├── defmt v1.1.1 (*)
+│   │   └── num-traits v0.2.19
+│   │       [build-dependencies]
+│   │       └── autocfg v1.5.1
+│   ├── embassy-net-driver-channel v0.4.0 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec)
+│   │   ├── embassy-futures v0.1.2 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec)
+│   │   ├── embassy-net-driver v0.2.0 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec)
+│   │   └── embassy-sync v0.8.0 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec) (*)
+│   ├── embassy-sync v0.8.0 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec) (*)
+│   ├── embassy-time v0.5.1 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec)
+│   │   ├── cfg-if v1.0.4
+│   │   ├── critical-section v1.2.0
+│   │   ├── defmt v1.1.1 (*)
+│   │   ├── document-features v0.2.12 (proc-macro)
+│   │   │   └── litrs v1.0.0
+│   │   ├── embassy-time-driver v0.2.2 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec)
+│   │   │   └── document-features v0.2.12 (proc-macro) (*)
+│   │   ├── embassy-time-queue-utils v0.3.2 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec)
+│   │   │   ├── embassy-executor-timer-queue v0.1.0 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec)
+│   │   │   └── heapless v0.9.3 (*)
+│   │   ├── embedded-hal v0.2.7 (*)
+│   │   ├── embedded-hal v1.0.0
+│   │   ├── embedded-hal-async v1.0.0
+│   │   │   └── embedded-hal v1.0.0
+│   │   └── futures-core v0.3.33
+│   ├── embedded-hal v1.0.0
+│   ├── embedded-hal-async v1.0.0 (*)
+│   ├── embedded-io-async v0.7.0 (*)
+│   ├── futures v0.3.33
+│   │   ├── futures-channel v0.3.33
+│   │   │   ├── futures-core v0.3.33
+│   │   │   └── futures-sink v0.3.33
+│   │   ├── futures-core v0.3.33
+│   │   ├── futures-io v0.3.33
+│   │   ├── futures-sink v0.3.33
+│   │   ├── futures-task v0.3.33
+│   │   └── futures-util v0.3.33
+│   │       ├── futures-core v0.3.33
+│   │       ├── futures-macro v0.3.33 (proc-macro)
+│   │       │   ├── proc-macro2 v1.0.107 (*)
+│   │       │   ├── quote v1.0.47 (*)
+│   │       │   └── syn v2.0.119 (*)
+│   │       ├── futures-sink v0.3.33
+│   │       ├── futures-task v0.3.33
+│   │       └── pin-project-lite v0.2.17
+│   ├── heapless v0.9.3 (*)
+│   └── trait-set v0.3.0 (proc-macro)
+│       ├── proc-macro2 v1.0.107 (*)
+│       ├── quote v1.0.47 (*)
+│       └── syn v1.0.109
+│           ├── proc-macro2 v1.0.107 (*)
+│           ├── quote v1.0.47 (*)
+│           └── unicode-ident v1.0.24
+├── cyw43-pio v0.10.0 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec)
+│   ├── cyw43 v0.7.0 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec) (*)
+│   ├── defmt v1.1.1 (*)
+│   ├── embassy-futures v0.1.2 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec)
+│   ├── embassy-rp v0.10.0 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec)
+│   │   ├── cfg-if v1.0.4
+│   │   ├── cortex-m v0.7.7 (*)
+│   │   ├── cortex-m-rt v0.7.5 (*)
+│   │   ├── critical-section v1.2.0
+│   │   ├── defmt v1.1.1 (*)
+│   │   ├── document-features v0.2.12 (proc-macro) (*)
+│   │   ├── embassy-embedded-hal v0.6.0 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec)
+│   │   │   ├── embassy-futures v0.1.2 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec)
+│   │   │   ├── embassy-hal-internal v0.5.0 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec) (*)
+│   │   │   ├── embassy-sync v0.8.0 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec) (*)
+│   │   │   ├── embedded-hal v0.2.7 (*)
+│   │   │   ├── embedded-hal v1.0.0
+│   │   │   ├── embedded-hal-async v1.0.0 (*)
+│   │   │   ├── embedded-storage v0.3.1
+│   │   │   ├── embedded-storage-async v0.4.1
+│   │   │   │   └── embedded-storage v0.3.1
+│   │   │   └── nb v1.1.0
+│   │   ├── embassy-futures v0.1.2 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec)
+│   │   ├── embassy-hal-internal v0.5.0 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec) (*)
+│   │   ├── embassy-sync v0.8.0 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec) (*)
+│   │   ├── embassy-time v0.5.1 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec) (*)
+│   │   ├── embassy-time-driver v0.2.2 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec) (*)
+│   │   ├── embassy-time-queue-utils v0.3.2 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec) (*)
+│   │   ├── embassy-usb-driver v0.2.1 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec)
+│   │   │   ├── defmt v1.1.1 (*)
+│   │   │   └── embedded-io-async v0.7.0 (*)
+│   │   ├── embedded-hal v0.2.7 (*)
+│   │   ├── embedded-hal v1.0.0
+│   │   ├── embedded-hal-async v1.0.0 (*)
+│   │   ├── embedded-hal-nb v1.0.0
+│   │   │   ├── embedded-hal v1.0.0
+│   │   │   └── nb v1.1.0
+│   │   ├── embedded-io v0.7.1 (*)
+│   │   ├── embedded-io-async v0.7.0 (*)
+│   │   ├── embedded-storage v0.3.1
+│   │   ├── embedded-storage-async v0.4.1 (*)
+│   │   ├── fixed v1.31.0
+│   │   │   ├── az v1.3.0
+│   │   │   ├── bytemuck v1.25.2
+│   │   │   ├── half v2.7.1
+│   │   │   │   ├── cfg-if v1.0.4
+│   │   │   │   ├── crunchy v0.2.4
+│   │   │   │   └── zerocopy v0.8.55
+│   │   │   │       └── zerocopy-derive v0.8.55 (proc-macro)
+│   │   │   │           ├── proc-macro2 v1.0.107 (*)
+│   │   │   │           ├── quote v1.0.47 (*)
+│   │   │   │           └── syn v2.0.119 (*)
+│   │   │   └── typenum v1.20.1
+│   │   ├── nb v1.1.0
+│   │   ├── pio v0.3.0
+│   │   │   ├── pio-core v0.3.0
+│   │   │   │   ├── arrayvec v0.7.8
+│   │   │   │   ├── num_enum v0.7.6
+│   │   │   │   │   ├── num_enum_derive v0.7.6 (proc-macro)
+│   │   │   │   │   │   ├── proc-macro2 v1.0.107 (*)
+│   │   │   │   │   │   ├── quote v1.0.47 (*)
+│   │   │   │   │   │   └── syn v2.0.119 (*)
+│   │   │   │   │   └── rustversion v1.0.23 (proc-macro)
+│   │   │   │   └── paste v1.0.15 (proc-macro)
+│   │   │   └── pio-proc v0.3.0 (proc-macro)
+│   │   │       ├── codespan-reporting v0.11.1
+│   │   │       │   ├── termcolor v1.4.1
+│   │   │       │   │   └── winapi-util v0.1.11
+│   │   │       │   │       └── windows-sys v0.61.2
+│   │   │       │   │           └── windows-link v0.2.1
+│   │   │       │   └── unicode-width v0.1.14
+│   │   │       ├── lalrpop-util v0.22.2
+│   │   │       │   ├── regex-automata v0.4.16
+│   │   │       │   │   ├── aho-corasick v1.1.4
+│   │   │       │   │   │   └── memchr v2.8.3
+│   │   │       │   │   ├── memchr v2.8.3
+│   │   │       │   │   └── regex-syntax v0.8.11
+│   │   │       │   └── rustversion v1.0.23 (proc-macro)
+│   │   │       ├── pio-core v0.3.0
+│   │   │       │   ├── arrayvec v0.7.8
+│   │   │       │   ├── num_enum v0.7.6
+│   │   │       │   │   ├── num_enum_derive v0.7.6 (proc-macro) (*)
+│   │   │       │   │   └── rustversion v1.0.23 (proc-macro)
+│   │   │       │   └── paste v1.0.15 (proc-macro)
+│   │   │       ├── pio-parser v0.3.0
+│   │   │       │   ├── lalrpop-util v0.22.2 (*)
+│   │   │       │   └── pio-core v0.3.0 (*)
+│   │   │       │   [build-dependencies]
+│   │   │       │   └── lalrpop v0.22.2
+│   │   │       │       ├── ascii-canvas v4.0.0
+│   │   │       │       │   └── term v1.2.1
+│   │   │       │       │       └── windows-sys v0.61.2 (*)
+│   │   │       │       ├── bit-set v0.8.0
+│   │   │       │       │   └── bit-vec v0.8.0
+│   │   │       │       ├── ena v0.14.4
+│   │   │       │       │   └── log v0.4.33
+│   │   │       │       ├── itertools v0.14.0
+│   │   │       │       │   └── either v1.17.0
+│   │   │       │       ├── lalrpop-util v0.22.2 (*)
+│   │   │       │       ├── petgraph v0.7.1
+│   │   │       │       │   ├── fixedbitset v0.5.7
+│   │   │       │       │   └── indexmap v2.14.0
+│   │   │       │       │       ├── equivalent v1.0.2
+│   │   │       │       │       └── hashbrown v0.17.1
+│   │   │       │       ├── pico-args v0.5.0
+│   │   │       │       ├── regex v1.13.1
+│   │   │       │       │   ├── regex-automata v0.4.16 (*)
+│   │   │       │       │   └── regex-syntax v0.8.11
+│   │   │       │       ├── regex-syntax v0.8.11
+│   │   │       │       ├── sha3 v0.10.9
+│   │   │       │       │   ├── digest v0.10.7
+│   │   │       │       │   │   ├── block-buffer v0.10.4
+│   │   │       │       │   │   │   └── generic-array v0.14.7
+│   │   │       │       │   │   │       └── typenum v1.20.1
+│   │   │       │       │   │   │       [build-dependencies]
+│   │   │       │       │   │   │       └── version_check v0.9.5
+│   │   │       │       │   │   └── crypto-common v0.1.7
+│   │   │       │       │   │       ├── generic-array v0.14.7 (*)
+│   │   │       │       │   │       └── typenum v1.20.1
+│   │   │       │       │   └── keccak v0.1.6
+│   │   │       │       │       └── cpufeatures v0.2.17
+│   │   │       │       │           └── libc v0.2.189
+│   │   │       │       ├── string_cache v0.8.9
+│   │   │       │       │   ├── new_debug_unreachable v1.0.6
+│   │   │       │       │   ├── parking_lot v0.12.5
+│   │   │       │       │   │   ├── lock_api v0.4.14
+│   │   │       │       │   │   │   └── scopeguard v1.2.0
+│   │   │       │       │   │   └── parking_lot_core v0.9.12
+│   │   │       │       │   │       ├── cfg-if v1.0.4
+│   │   │       │       │   │       ├── libc v0.2.189
+│   │   │       │       │   │       ├── redox_syscall v0.5.18
+│   │   │       │       │   │       │   └── bitflags v2.13.1
+│   │   │       │       │   │       ├── smallvec v1.15.2
+│   │   │       │       │   │       └── windows-link v0.2.1
+│   │   │       │       │   ├── phf_shared v0.11.3
+│   │   │       │       │   │   └── siphasher v1.0.3
+│   │   │       │       │   └── precomputed-hash v0.1.1
+│   │   │       │       ├── term v1.2.1 (*)
+│   │   │       │       ├── unicode-xid v0.2.6
+│   │   │       │       └── walkdir v2.5.0
+│   │   │       │           ├── same-file v1.0.6
+│   │   │       │           │   └── winapi-util v0.1.11 (*)
+│   │   │       │           └── winapi-util v0.1.11 (*)
+│   │   │       ├── proc-macro-error2 v2.0.1
+│   │   │       │   ├── proc-macro-error-attr2 v2.0.0 (proc-macro)
+│   │   │       │   │   ├── proc-macro2 v1.0.107 (*)
+│   │   │       │   │   └── quote v1.0.47 (*)
+│   │   │       │   ├── proc-macro2 v1.0.107 (*)
+│   │   │       │   ├── quote v1.0.47 (*)
+│   │   │       │   └── syn v2.0.119 (*)
+│   │   │       ├── proc-macro2 v1.0.107 (*)
+│   │   │       ├── quote v1.0.47 (*)
+│   │   │       └── syn v2.0.119 (*)
+│   │   ├── rand_core v0.6.4
+│   │   ├── rand_core v0.9.5
+│   │   ├── rand_core v0.10.1
+│   │   ├── rp-pac v7.0.0 (https://github.com/embassy-rs/rp-pac?rev=c2e27609b021c444f634673155318977d7f0bdf6#c2e27609)
+│   │   │   ├── cortex-m v0.7.7 (*)
+│   │   │   └── cortex-m-rt v0.7.5 (*)
+│   │   ├── rp2040-boot2 v0.3.0
+│   │   │   [build-dependencies]
+│   │   │   └── crc-any v2.5.1
+│   │   │       └── debug-helper v0.3.14
+│   │   ├── sha2-const-stable v0.1.0
+│   │   └── smart-leds v0.4.0
+│   │       └── smart-leds-trait v0.3.2
+│   │           └── rgb v0.8.53
+│   └── fixed v1.31.0 (*)
+├── defmt v1.1.1 (*)
+├── embassy-executor v0.10.0 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec)
+│   ├── cordyceps v0.3.4
+│   │   ├── loom v0.7.2
+│   │   │   ├── cfg-if v1.0.4
+│   │   │   ├── generator v0.8.9
+│   │   │   │   ├── cfg-if v1.0.4
+│   │   │   │   ├── libc v0.2.189
+│   │   │   │   ├── log v0.4.33
+│   │   │   │   ├── windows-link v0.2.1
+│   │   │   │   └── windows-result v0.4.1
+│   │   │   │       └── windows-link v0.2.1
+│   │   │   │   [build-dependencies]
+│   │   │   │   ├── cc v1.4.0
+│   │   │   │   │   ├── find-msvc-tools v0.1.9
+│   │   │   │   │   ├── jobserver v0.1.35
+│   │   │   │   │   │   ├── getrandom v0.4.3
+│   │   │   │   │   │   │   ├── cfg-if v1.0.4
+│   │   │   │   │   │   │   ├── libc v0.2.189
+│   │   │   │   │   │   │   └── r-efi v6.0.0
+│   │   │   │   │   │   └── libc v0.2.189
+│   │   │   │   │   ├── libc v0.2.189
+│   │   │   │   │   └── shlex v2.0.1
+│   │   │   │   └── rustversion v1.0.23 (proc-macro)
+│   │   │   ├── scoped-tls v1.0.1
+│   │   │   ├── tracing v0.1.44
+│   │   │   │   ├── pin-project-lite v0.2.17
+│   │   │   │   ├── tracing-attributes v0.1.31 (proc-macro)
+│   │   │   │   │   ├── proc-macro2 v1.0.107 (*)
+│   │   │   │   │   ├── quote v1.0.47 (*)
+│   │   │   │   │   └── syn v2.0.119 (*)
+│   │   │   │   └── tracing-core v0.1.36
+│   │   │   │       └── once_cell v1.21.4
+│   │   │   └── tracing-subscriber v0.3.23
+│   │   │       ├── matchers v0.2.0
+│   │   │       │   └── regex-automata v0.4.16
+│   │   │       │       └── regex-syntax v0.8.11
+│   │   │       ├── nu-ansi-term v0.50.3
+│   │   │       │   └── windows-sys v0.61.2
+│   │   │       │       └── windows-link v0.2.1
+│   │   │       ├── once_cell v1.21.4
+│   │   │       ├── regex-automata v0.4.16 (*)
+│   │   │       ├── sharded-slab v0.1.7
+│   │   │       │   └── lazy_static v1.5.0
+│   │   │       ├── smallvec v1.15.2
+│   │   │       ├── thread_local v1.1.10
+│   │   │       │   └── cfg-if v1.0.4
+│   │   │       ├── tracing v0.1.44 (*)
+│   │   │       ├── tracing-core v0.1.36 (*)
+│   │   │       └── tracing-log v0.2.0
+│   │   │           ├── log v0.4.33
+│   │   │           ├── once_cell v1.21.4
+│   │   │           └── tracing-core v0.1.36 (*)
+│   │   └── tracing v0.1.44 (*)
+│   ├── cortex-m v0.7.7 (*)
+│   ├── critical-section v1.2.0
+│   ├── defmt v1.1.1 (*)
+│   ├── document-features v0.2.12 (proc-macro) (*)
+│   ├── embassy-executor-macros v0.8.0 (proc-macro) (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec)
+│   │   ├── darling v0.20.11
+│   │   │   ├── darling_core v0.20.11
+│   │   │   │   ├── fnv v1.0.7
+│   │   │   │   ├── ident_case v1.0.1
+│   │   │   │   ├── proc-macro2 v1.0.107 (*)
+│   │   │   │   ├── quote v1.0.47 (*)
+│   │   │   │   ├── strsim v0.11.1
+│   │   │   │   └── syn v2.0.119 (*)
+│   │   │   └── darling_macro v0.20.11 (proc-macro)
+│   │   │       ├── darling_core v0.20.11 (*)
+│   │   │       ├── quote v1.0.47 (*)
+│   │   │       └── syn v2.0.119 (*)
+│   │   ├── proc-macro2 v1.0.107 (*)
+│   │   ├── quote v1.0.47 (*)
+│   │   └── syn v2.0.119 (*)
+│   └── embassy-executor-timer-queue v0.1.0 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec)
+├── embassy-futures v0.1.2
+│   └── defmt v1.1.1 (*)
+├── embassy-rp v0.10.0 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec) (*)
+├── embassy-sync v0.8.0 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec) (*)
+├── embassy-time v0.5.1 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec) (*)
+├── embassy-usb v0.6.0 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec)
+│   ├── bitflags v2.13.1
+│   ├── defmt v1.1.1 (*)
+│   ├── embassy-futures v0.1.2 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec)
+│   ├── embassy-net-driver-channel v0.4.0 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec) (*)
+│   ├── embassy-sync v0.8.0 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec) (*)
+│   ├── embassy-time v0.5.1 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec) (*)
+│   ├── embassy-usb-driver v0.2.1 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec) (*)
+│   ├── embedded-io-async v0.7.0 (*)
+│   ├── heapless v0.9.3 (*)
+│   ├── ssmarshal v1.0.0
+│   │   ├── encode_unicode v0.3.6
+│   │   └── serde v1.0.229
+│   │       └── serde_core v1.0.229
+│   │           └── serde_derive v1.0.229 (proc-macro)
+│   │               ├── proc-macro2 v1.0.107 (*)
+│   │               ├── quote v1.0.47 (*)
+│   │               └── syn v3.0.3 (*)
+│   └── usbd-hid v0.10.2
+│       ├── usb-device v0.3.2
+│       │   ├── heapless v0.8.0
+│       │   │   ├── hash32 v0.3.1 (*)
+│       │   │   └── stable_deref_trait v1.2.1
+│       │   └── portable-atomic v1.14.0
+│       │       └── critical-section v1.2.0
+│       └── usbd-hid-macros v0.10.2 (proc-macro)
+│           ├── byteorder v1.5.0
+│           ├── log v0.4.33
+│           ├── proc-macro2 v1.0.107 (*)
+│           ├── quote v1.0.47 (*)
+│           ├── serde v1.0.229
+│           │   └── serde_core v1.0.229
+│           │       └── serde_derive v1.0.229 (proc-macro) (*)
+│           ├── syn v3.0.3 (*)
+│           └── usbd-hid-descriptors v0.10.2
+│               └── bitfield v0.19.5
+│                   └── bitfield-macros v0.19.5 (proc-macro)
+│                       ├── proc-macro2 v1.0.107 (*)
+│                       ├── quote v1.0.47 (*)
+│                       └── syn v3.0.3 (*)
+├── panic-probe v1.0.0
+│   ├── cortex-m v0.7.7 (*)
+│   └── defmt v1.1.1 (*)
+├── portable-atomic v1.14.0 (*)
+├── static_cell v2.1.1
+│   └── portable-atomic v1.14.0 (*)
+└── trouble-host v0.7.0
+    ├── bt-hci v0.9.0 (*)
+    ├── defmt v1.1.1 (*)
+    ├── embassy-futures v0.1.2 (*)
+    ├── embassy-sync v0.8.0 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec) (*)
+    ├── embassy-time v0.5.1 (https://github.com/embassy-rs/embassy.git?rev=1d3c3de#1d3c3dec) (*)
+    ├── embedded-io v0.7.1 (*)
+    ├── futures v0.3.33 (*)
+    ├── heapless v0.9.3 (*)
+    ├── static_cell v2.1.1 (*)
+    ├── trouble-host-macros v0.5.0 (proc-macro)
+    │   ├── convert_case v0.8.0
+    │   │   └── unicode-segmentation v1.13.3
+    │   ├── darling v0.20.11 (*)
+    │   ├── proc-macro2 v1.0.107 (*)
+    │   ├── quote v1.0.47 (*)
+    │   ├── syn v2.0.119 (*)
+    │   └── uuid v1.24.0
+    └── zerocopy v0.8.55 (*)
+[build-dependencies]
+└── reqwest v0.13.5
+    ├── base64 v0.23.1
+    ├── bytes v1.12.1
+    ├── encoding_rs v0.8.35
+    │   └── cfg-if v1.0.4
+    ├── futures-channel v0.3.33
+    │   ├── futures-core v0.3.33
+    │   └── futures-sink v0.3.33
+    ├── futures-core v0.3.33
+    ├── futures-util v0.3.33
+    │   ├── futures-core v0.3.33
+    │   ├── futures-io v0.3.33
+    │   ├── futures-sink v0.3.33
+    │   ├── futures-task v0.3.33
+    │   ├── memchr v2.8.3
+    │   ├── pin-project-lite v0.2.17
+    │   └── slab v0.4.12
+    ├── h2 v0.4.15
+    │   ├── atomic-waker v1.1.2
+    │   ├── bytes v1.12.1
+    │   ├── fnv v1.0.7
+    │   ├── futures-core v0.3.33
+    │   ├── futures-sink v0.3.33
+    │   ├── http v1.4.2
+    │   │   ├── bytes v1.12.1
+    │   │   └── itoa v1.0.18
+    │   ├── indexmap v2.14.0 (*)
+    │   ├── slab v0.4.12
+    │   ├── tokio v1.53.1
+    │   │   ├── bytes v1.12.1
+    │   │   ├── libc v0.2.189
+    │   │   ├── mio v1.2.2
+    │   │   │   ├── libc v0.2.189
+    │   │   │   ├── wasi v0.11.1+wasi-snapshot-preview1
+    │   │   │   └── windows-sys v0.61.2 (*)
+    │   │   ├── pin-project-lite v0.2.17
+    │   │   ├── socket2 v0.6.5
+    │   │   │   ├── libc v0.2.189
+    │   │   │   └── windows-sys v0.61.2 (*)
+    │   │   └── windows-sys v0.61.2 (*)
+    │   ├── tokio-util v0.7.19
+    │   │   ├── bytes v1.12.1
+    │   │   ├── futures-core v0.3.33
+    │   │   ├── futures-sink v0.3.33
+    │   │   ├── libc v0.2.189
+    │   │   ├── pin-project-lite v0.2.17
+    │   │   └── tokio v1.53.1 (*)
+    │   └── tracing v0.1.44
+    │       ├── pin-project-lite v0.2.17
+    │       └── tracing-core v0.1.36
+    │           └── once_cell v1.21.4
+    ├── http v1.4.2 (*)
+    ├── http-body v1.1.0
+    │   ├── bytes v1.12.1
+    │   └── http v1.4.2 (*)
+    ├── http-body-util v0.1.4
+    │   ├── bytes v1.12.1
+    │   ├── futures-core v0.3.33
+    │   ├── http v1.4.2 (*)
+    │   ├── http-body v1.1.0 (*)
+    │   └── pin-project-lite v0.2.17
+    ├── hyper v1.11.0
+    │   ├── atomic-waker v1.1.2
+    │   ├── bytes v1.12.1
+    │   ├── futures-channel v0.3.33 (*)
+    │   ├── futures-core v0.3.33
+    │   ├── h2 v0.4.15 (*)
+    │   ├── http v1.4.2 (*)
+    │   ├── http-body v1.1.0 (*)
+    │   ├── httparse v1.10.1
+    │   ├── itoa v1.0.18
+    │   ├── pin-project-lite v0.2.17
+    │   ├── smallvec v1.15.2
+    │   ├── tokio v1.53.1 (*)
+    │   └── want v0.3.1
+    │       └── try-lock v0.2.5
+    ├── hyper-rustls v0.27.9
+    │   ├── http v1.4.2 (*)
+    │   ├── hyper v1.11.0 (*)
+    │   ├── hyper-util v0.1.20
+    │   │   ├── base64 v0.22.1
+    │   │   ├── bytes v1.12.1
+    │   │   ├── futures-channel v0.3.33 (*)
+    │   │   ├── futures-util v0.3.33 (*)
+    │   │   ├── http v1.4.2 (*)
+    │   │   ├── http-body v1.1.0 (*)
+    │   │   ├── hyper v1.11.0 (*)
+    │   │   ├── ipnet v2.12.0
+    │   │   ├── libc v0.2.189
+    │   │   ├── percent-encoding v2.3.2
+    │   │   ├── pin-project-lite v0.2.17
+    │   │   ├── socket2 v0.6.5 (*)
+    │   │   ├── system-configuration v0.7.0
+    │   │   │   ├── bitflags v2.13.1
+    │   │   │   ├── core-foundation v0.9.4
+    │   │   │   │   ├── core-foundation-sys v0.8.7
+    │   │   │   │   └── libc v0.2.189
+    │   │   │   └── system-configuration-sys v0.6.0
+    │   │   │       ├── core-foundation-sys v0.8.7
+    │   │   │       └── libc v0.2.189
+    │   │   ├── tokio v1.53.1 (*)
+    │   │   ├── tower-service v0.3.3
+    │   │   ├── tracing v0.1.44 (*)
+    │   │   └── windows-registry v0.6.1
+    │   │       ├── windows-link v0.2.1
+    │   │       ├── windows-result v0.4.1
+    │   │       │   └── windows-link v0.2.1
+    │   │       └── windows-strings v0.5.1
+    │   │           └── windows-link v0.2.1
+    │   ├── rustls v0.23.42
+    │   │   ├── aws-lc-rs v1.17.3
+    │   │   │   ├── aws-lc-sys v0.43.0
+    │   │   │   │   [build-dependencies]
+    │   │   │   │   ├── cc v1.4.0 (*)
+    │   │   │   │   ├── cmake v0.1.58
+    │   │   │   │   │   └── cc v1.4.0 (*)
+    │   │   │   │   ├── dunce v1.0.5
+    │   │   │   │   ├── fs_extra v1.3.0
+    │   │   │   │   └── pkg-config v0.3.33
+    │   │   │   └── zeroize v1.9.0
+    │   │   ├── once_cell v1.21.4
+    │   │   ├── rustls-pki-types v1.15.1
+    │   │   │   └── zeroize v1.9.0
+    │   │   ├── rustls-webpki v0.103.13
+    │   │   │   ├── aws-lc-rs v1.17.3 (*)
+    │   │   │   ├── rustls-pki-types v1.15.1 (*)
+    │   │   │   └── untrusted v0.9.0
+    │   │   ├── subtle v2.6.1
+    │   │   └── zeroize v1.9.0
+    │   ├── tokio v1.53.1 (*)
+    │   ├── tokio-rustls v0.26.4
+    │   │   ├── rustls v0.23.42 (*)
+    │   │   └── tokio v1.53.1 (*)
+    │   └── tower-service v0.3.3
+    ├── hyper-util v0.1.20 (*)
+    ├── js-sys v0.3.103
+    │   ├── cfg-if v1.0.4
+    │   ├── futures-util v0.3.33 (*)
+    │   └── wasm-bindgen v0.2.126
+    │       ├── cfg-if v1.0.4
+    │       ├── once_cell v1.21.4
+    │       ├── wasm-bindgen-macro v0.2.126 (proc-macro)
+    │       │   ├── quote v1.0.47 (*)
+    │       │   └── wasm-bindgen-macro-support v0.2.126
+    │       │       ├── bumpalo v3.20.3
+    │       │       ├── proc-macro2 v1.0.107 (*)
+    │       │       ├── quote v1.0.47 (*)
+    │       │       ├── syn v2.0.119 (*)
+    │       │       └── wasm-bindgen-shared v0.2.126
+    │       │           └── unicode-ident v1.0.24
+    │       └── wasm-bindgen-shared v0.2.126 (*)
+    │       [build-dependencies]
+    │       └── rustversion v1.0.23 (proc-macro)
+    ├── log v0.4.33
+    ├── mime v0.3.17
+    ├── percent-encoding v2.3.2
+    ├── pin-project-lite v0.2.17
+    ├── rustls v0.23.42 (*)
+    ├── rustls-pki-types v1.15.1 (*)
+    ├── rustls-platform-verifier v0.7.0
+    │   ├── core-foundation v0.10.1
+    │   │   ├── core-foundation-sys v0.8.7
+    │   │   └── libc v0.2.189
+    │   ├── core-foundation-sys v0.8.7
+    │   ├── jni v0.22.4
+    │   │   ├── cfg-if v1.0.4
+    │   │   ├── combine v4.6.7
+    │   │   │   ├── bytes v1.12.1
+    │   │   │   └── memchr v2.8.3
+    │   │   ├── jni-macros v0.22.4 (proc-macro)
+    │   │   │   ├── proc-macro2 v1.0.107 (*)
+    │   │   │   ├── quote v1.0.47 (*)
+    │   │   │   ├── simd_cesu8 v1.2.0
+    │   │   │   │   └── simdutf8 v0.1.5
+    │   │   │   │   [build-dependencies]
+    │   │   │   │   └── rustc_version v0.4.1
+    │   │   │   │       └── semver v1.0.28
+    │   │   │   └── syn v2.0.119 (*)
+    │   │   │   [build-dependencies]
+    │   │   │   └── rustc_version v0.4.1 (*)
+    │   │   ├── jni-sys v0.4.1
+    │   │   │   └── jni-sys-macros v0.4.1 (proc-macro)
+    │   │   │       ├── quote v1.0.47 (*)
+    │   │   │       └── syn v2.0.119 (*)
+    │   │   ├── log v0.4.33
+    │   │   ├── simd_cesu8 v1.2.0 (*)
+    │   │   ├── thiserror v2.0.19 (*)
+    │   │   └── windows-link v0.2.1
+    │   │   [build-dependencies]
+    │   │   └── walkdir v2.5.0 (*)
+    │   ├── log v0.4.33
+    │   ├── once_cell v1.21.4
+    │   ├── rustls v0.23.42 (*)
+    │   ├── rustls-native-certs v0.8.4
+    │   │   ├── openssl-probe v0.2.1
+    │   │   ├── rustls-pki-types v1.15.1 (*)
+    │   │   ├── schannel v0.1.29
+    │   │   │   └── windows-sys v0.61.2 (*)
+    │   │   └── security-framework v3.7.0
+    │   │       ├── bitflags v2.13.1
+    │   │       ├── core-foundation v0.10.1 (*)
+    │   │       ├── core-foundation-sys v0.8.7
+    │   │       ├── libc v0.2.189
+    │   │       └── security-framework-sys v2.17.0
+    │   │           ├── core-foundation-sys v0.8.7
+    │   │           └── libc v0.2.189
+    │   ├── rustls-platform-verifier-android v0.1.1
+    │   ├── rustls-webpki v0.103.13 (*)
+    │   ├── security-framework v3.7.0 (*)
+    │   ├── security-framework-sys v2.17.0 (*)
+    │   ├── webpki-root-certs v1.0.9
+    │   │   └── rustls-pki-types v1.15.1 (*)
+    │   └── windows-sys v0.61.2 (*)
+    ├── sync_wrapper v1.0.2
+    │   └── futures-core v0.3.33
+    ├── tokio v1.53.1 (*)
+    ├── tokio-rustls v0.26.4 (*)
+    ├── tower v0.5.3
+    │   ├── futures-core v0.3.33
+    │   ├── futures-util v0.3.33 (*)
+    │   ├── pin-project-lite v0.2.17
+    │   ├── sync_wrapper v1.0.2 (*)
+    │   ├── tokio v1.53.1 (*)
+    │   ├── tower-layer v0.3.3
+    │   └── tower-service v0.3.3
+    ├── tower-http v0.6.11
+    │   ├── bitflags v2.13.1
+    │   ├── bytes v1.12.1
+    │   ├── futures-util v0.3.33 (*)
+    │   ├── http v1.4.2 (*)
+    │   ├── http-body v1.1.0 (*)
+    │   ├── pin-project-lite v0.2.17
+    │   ├── tower v0.5.3 (*)
+    │   ├── tower-layer v0.3.3
+    │   ├── tower-service v0.3.3
+    │   └── url v2.5.8
+    │       ├── form_urlencoded v1.2.2
+    │       │   └── percent-encoding v2.3.2
+    │       ├── idna v1.1.0
+    │       │   ├── idna_adapter v1.2.2
+    │       │   │   ├── icu_normalizer v2.2.0
+    │       │   │   │   ├── icu_collections v2.2.0
+    │       │   │   │   │   ├── displaydoc v0.2.6 (proc-macro)
+    │       │   │   │   │   │   ├── proc-macro2 v1.0.107 (*)
+    │       │   │   │   │   │   ├── quote v1.0.47 (*)
+    │       │   │   │   │   │   └── syn v2.0.119 (*)
+    │       │   │   │   │   ├── potential_utf v0.1.5
+    │       │   │   │   │   │   └── zerovec v0.11.6
+    │       │   │   │   │   │       ├── yoke v0.8.3
+    │       │   │   │   │   │       │   ├── stable_deref_trait v1.2.1
+    │       │   │   │   │   │       │   ├── yoke-derive v0.8.2 (proc-macro)
+    │       │   │   │   │   │       │   │   ├── proc-macro2 v1.0.107 (*)
+    │       │   │   │   │   │       │   │   ├── quote v1.0.47 (*)
+    │       │   │   │   │   │       │   │   ├── syn v2.0.119 (*)
+    │       │   │   │   │   │       │   │   └── synstructure v0.13.2
+    │       │   │   │   │   │       │   │       ├── proc-macro2 v1.0.107 (*)
+    │       │   │   │   │   │       │   │       ├── quote v1.0.47 (*)
+    │       │   │   │   │   │       │   │       └── syn v2.0.119 (*)
+    │       │   │   │   │   │       │   └── zerofrom v0.1.8
+    │       │   │   │   │   │       │       └── zerofrom-derive v0.1.7 (proc-macro)
+    │       │   │   │   │   │       │           ├── proc-macro2 v1.0.107 (*)
+    │       │   │   │   │   │       │           ├── quote v1.0.47 (*)
+    │       │   │   │   │   │       │           ├── syn v2.0.119 (*)
+    │       │   │   │   │   │       │           └── synstructure v0.13.2 (*)
+    │       │   │   │   │   │       ├── zerofrom v0.1.8 (*)
+    │       │   │   │   │   │       └── zerovec-derive v0.11.3 (proc-macro)
+    │       │   │   │   │   │           ├── proc-macro2 v1.0.107 (*)
+    │       │   │   │   │   │           ├── quote v1.0.47 (*)
+    │       │   │   │   │   │           └── syn v2.0.119 (*)
+    │       │   │   │   │   ├── utf8_iter v1.0.4
+    │       │   │   │   │   ├── yoke v0.8.3 (*)
+    │       │   │   │   │   ├── zerofrom v0.1.8 (*)
+    │       │   │   │   │   └── zerovec v0.11.6 (*)
+    │       │   │   │   ├── icu_normalizer_data v2.2.0
+    │       │   │   │   ├── icu_provider v2.2.0
+    │       │   │   │   │   ├── displaydoc v0.2.6 (proc-macro) (*)
+    │       │   │   │   │   ├── icu_locale_core v2.2.0
+    │       │   │   │   │   │   ├── displaydoc v0.2.6 (proc-macro) (*)
+    │       │   │   │   │   │   ├── litemap v0.8.2
+    │       │   │   │   │   │   ├── tinystr v0.8.3
+    │       │   │   │   │   │   │   ├── displaydoc v0.2.6 (proc-macro) (*)
+    │       │   │   │   │   │   │   └── zerovec v0.11.6 (*)
+    │       │   │   │   │   │   ├── writeable v0.6.3
+    │       │   │   │   │   │   └── zerovec v0.11.6 (*)
+    │       │   │   │   │   ├── writeable v0.6.3
+    │       │   │   │   │   ├── yoke v0.8.3 (*)
+    │       │   │   │   │   ├── zerofrom v0.1.8 (*)
+    │       │   │   │   │   ├── zerotrie v0.2.4
+    │       │   │   │   │   │   ├── displaydoc v0.2.6 (proc-macro) (*)
+    │       │   │   │   │   │   ├── yoke v0.8.3 (*)
+    │       │   │   │   │   │   └── zerofrom v0.1.8 (*)
+    │       │   │   │   │   └── zerovec v0.11.6 (*)
+    │       │   │   │   ├── smallvec v1.15.2
+    │       │   │   │   └── zerovec v0.11.6 (*)
+    │       │   │   └── icu_properties v2.2.0
+    │       │   │       ├── icu_collections v2.2.0 (*)
+    │       │   │       ├── icu_locale_core v2.2.0 (*)
+    │       │   │       ├── icu_properties_data v2.2.0
+    │       │   │       ├── icu_provider v2.2.0 (*)
+    │       │   │       ├── zerotrie v0.2.4 (*)
+    │       │   │       └── zerovec v0.11.6 (*)
+    │       │   ├── smallvec v1.15.2
+    │       │   └── utf8_iter v1.0.4
+    │       └── percent-encoding v2.3.2
+    ├── tower-service v0.3.3
+    ├── url v2.5.8 (*)
+    ├── wasm-bindgen v0.2.126 (*)
+    ├── wasm-bindgen-futures v0.4.76
+    │   ├── js-sys v0.3.103 (*)
+    │   └── wasm-bindgen v0.2.126 (*)
+    └── web-sys v0.3.103
+        ├── js-sys v0.3.103 (*)
+        └── wasm-bindgen v0.2.126 (*)
+[dev-dependencies]
+└── critical-section v1.2.0

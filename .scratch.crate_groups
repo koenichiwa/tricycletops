@@ -1,0 +1,83 @@
+# .scratch.crate_groups
+# Authoritative source of truth for crate groups, leaders, and version tracking
+
+## Group 1: Utilities & Low-Level Primitives
+- Label: standalone-primitives
+- Group Leader: portable-atomic
+- Reason for Leader Selection: Standalone low-level atomic primitives crate with minimal external coupling, serving as a dependency for static_cell and usb-device.
+- Member Crates:
+  - portable-atomic:
+    - Current: 1.15.0
+    - Target: 1.15.0
+- Relevant Dependency Relationships:
+  - portable-atomic is used by static_cell (2.1.1) and usb-device (0.3.2).
+- Status: Completed
+
+## Group 2: Diagnostics & Logging
+- Label: diagnostics-defmt
+- Group Leader: defmt
+- Reason for Leader Selection: Core logging crate whose macros and formatting traits are implemented across HAL, runtime, and peripheral drivers.
+- Member Crates:
+  - defmt:
+    - Current: 1.2.0
+    - Target: 1.2.0
+- Relevant Dependency Relationships:
+  - defmt is a direct dependency and required feature across embassy-rp, cyw43, trouble-host, and panic-probe.
+- Status: Completed
+
+## Group 3: Cortex-M Architecture Support
+- Label: cortex-m-arch
+- Group Leader: cortex-m
+- Reason for Leader Selection: Foundational ARM Cortex-M hardware register and inline assembly library upon which cortex-m-rt and HALs depend.
+- Member Crates:
+  - cortex-m:
+    - Current: 0.7.10
+    - Target: 0.7.10
+  - cortex-m-rt:
+    - Current: 0.7.7
+    - Target: 0.7.7
+- Relevant Dependency Relationships:
+  - cortex-m-rt runtime startup code depends on cortex-m. Both are required by embassy-rp, cyw43, and the main binary.
+- Status: Completed
+
+## Group 4: Embassy Runtime & Hardware HAL
+- Label: embassy-ecosystem
+- Group Leader: embassy-rp
+- Reason for Leader Selection: Central microcontroller HAL providing RP2040 peripheral drivers, time-driver, and GPIO/PIO implementations required by cyw43-pio and embassy-usb.
+- Member Crates:
+  - embassy-rp:
+    - Current: 0.10.0 (git rev 0bf016d)
+    - Target: 0.10.0
+  - embassy-sync:
+    - Current: 0.8.0 (git rev 0bf016d)
+    - Target: 0.8.0
+  - embassy-executor:
+    - Current: 0.10.0 (git rev 0bf016d)
+    - Target: 0.10.0
+  - embassy-time:
+    - Current: 0.5.1 (git rev 0bf016d)
+    - Target: 0.5.1
+  - embassy-usb:
+    - Current: 0.6.0 (git rev 0bf016d)
+    - Target: 0.6.0
+  - cyw43:
+    - Current: 0.7.0 (git rev 0bf016d)
+    - Target: 0.7.0
+  - cyw43-pio:
+    - Current: 0.10.0 (git rev 0bf016d)
+    - Target: 0.10.0
+- Relevant Dependency Relationships:
+  - Synchronized upstream git commit rev 0bf016d provides native bt-hci-transport 0.1.0 support required by trouble-host 0.8.0 per design.md risk mitigation.
+- Status: Completed
+
+## Group 5: Bluetooth Low Energy Stack
+- Label: ble-trouble-host
+- Group Leader: trouble-host
+- Reason for Leader Selection: Top-level BLE host stack dependency whose major/minor API versions define the GATT server macros and bt-hci controller constraints.
+- Member Crates:
+  - trouble-host:
+    - Current: 0.8.0
+    - Target: 0.8.0
+- Relevant Dependency Relationships:
+  - trouble-host connects directly to cyw43 bluetooth controller via bt-hci-transport (0.1.0).
+- Status: Completed
