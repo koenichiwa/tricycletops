@@ -172,6 +172,9 @@ struct UsbLogger {
     controller: UnsafeCell<Controller>,
 }
 
+// SAFETY: Access to the internal `UnsafeCell` fields (`restore`, `encoder`, `controller`) is
+// strictly synchronized via critical sections (disabling interrupts) and guarded by the `taken`
+// atomic flag to prevent concurrent or reentrant access across execution contexts.
 #[cfg(all(target_arch = "arm", target_os = "none"))]
 unsafe impl Sync for UsbLogger {}
 
@@ -190,6 +193,8 @@ impl UsbLogger {
     }
 
     fn acquire(&self) {
+        // SAFETY: `critical_section::acquire()` disables interrupts to enter a critical section,
+        // returning the previous interrupt state to be restored on release.
         let restore = unsafe { critical_section::acquire() };
 
         if self.taken.load(Ordering::Relaxed) {
@@ -198,6 +203,8 @@ impl UsbLogger {
 
         self.taken.store(true, Ordering::Relaxed);
 
+        // SAFETY: We have entered a critical section and verified `self.taken` was false.
+        // Exclusive access to `restore`, `encoder`, and `controller` is guaranteed until `release`.
         unsafe {
             self.restore.get().write(restore);
             let encoder = &mut *self.encoder.get();
@@ -208,7 +215,10 @@ impl UsbLogger {
         }
     }
 
+    // SAFETY: The caller must ensure that `acquire()` has been called before `write()`,
+    // establishing a critical section and exclusive mutable access to the encoder and controller.
     unsafe fn write(&self, bytes: &[u8]) {
+        // SAFETY: Exclusive access is guaranteed by the critical section established by `acquire()`.
         let encoder = unsafe { &mut *self.encoder.get() };
         let controller = unsafe { &mut *self.controller.get() };
         encoder.write(bytes, |b| {
@@ -216,11 +226,15 @@ impl UsbLogger {
         });
     }
 
+    // SAFETY: The caller must ensure that `acquire()` was called prior to `release()` and that the
+    // critical section is still active.
     unsafe fn release(&self) {
         if !self.taken.load(Ordering::Relaxed) {
             panic!("defmt release outside of critical section");
         }
 
+        // SAFETY: We hold exclusive access via the critical section and `self.taken`. We finalize the
+        // frame, read back the restore state, reset `self.taken`, and release the critical section.
         unsafe {
             let encoder = &mut *self.encoder.get();
             let controller = &mut *self.controller.get();
@@ -236,7 +250,10 @@ impl UsbLogger {
         }
     }
 
+    // SAFETY: The caller must ensure that calling `flush()` does not violate aliasing rules
+    // or is done within a synchronized context.
     unsafe fn flush(&self) {
+        // SAFETY: Mutable access to controller to trigger frame flushing on demand.
         unsafe {
             let controller = &mut *self.controller.get();
             controller.on_frame_end();
@@ -248,21 +265,29 @@ impl UsbLogger {
 #[defmt::global_logger]
 struct UsbDefmtLogger;
 
+// SAFETY: `UsbDefmtLogger` satisfies defmt's global logger contract by routing calls to `LOGGER`,
+// which manages reentrancy checks and critical section synchronization.
 #[cfg(all(target_arch = "arm", target_os = "none"))]
 unsafe impl defmt::Logger for UsbDefmtLogger {
     fn acquire() {
         LOGGER.acquire();
     }
 
+    // SAFETY: Delegates to `LOGGER.flush()` satisfying `defmt::Logger::flush` contract.
     unsafe fn flush() {
+        // SAFETY: Permitted by `defmt::Logger::flush` contract.
         unsafe { LOGGER.flush() };
     }
 
+    // SAFETY: Delegates to `LOGGER.release()`, restoring the critical section entered in `acquire()`.
     unsafe fn release() {
+        // SAFETY: Permitted by `defmt::Logger::release` contract following `acquire()`.
         unsafe { LOGGER.release() };
     }
 
+    // SAFETY: Delegates to `LOGGER.write()`, valid between `acquire()` and `release()` in a critical section.
     unsafe fn write(bytes: &[u8]) {
+        // SAFETY: Permitted by `defmt::Logger::write` contract between `acquire()` and `release()`.
         unsafe { LOGGER.write(bytes) };
     }
 }
@@ -282,6 +307,8 @@ pub async fn cdc_task<D: Driver<'static>>(mut sender: Sender<'static, D>) -> ! {
             poll_fn(|cx| {
                 critical_section::with(|_cs| {
                     WAKER.register(cx.waker());
+                    // SAFETY: Accessing controller inside `critical_section::with` guarantees
+                    // mutual exclusion against `UsbLogger`'s acquire/write/release.
                     let controller = unsafe { &*LOGGER.controller.get() };
                     if controller.is_flush_pending() {
                         Poll::Ready(())
@@ -298,6 +325,8 @@ pub async fn cdc_task<D: Driver<'static>>(mut sender: Sender<'static, D>) -> ! {
 
             loop {
                 let chunk = critical_section::with(|_cs| {
+                    // SAFETY: Mutable access to controller inside `critical_section::with` guarantees
+                    // mutual exclusion against logger interrupt/thread contexts.
                     let controller = unsafe { &mut *LOGGER.controller.get() };
                     controller.get_chunk(&mut read_cursor, packet_size)
                 });
@@ -326,6 +355,8 @@ pub async fn cdc_task<D: Driver<'static>>(mut sender: Sender<'static, D>) -> ! {
 
             if disconnected {
                 critical_section::with(|_cs| {
+                    // SAFETY: Mutable access inside `critical_section::with` guarantees mutual exclusion
+                    // while clearing pending buffers on USB disconnect.
                     let controller = unsafe { &mut *LOGGER.controller.get() };
                     controller.reset_on_disconnect();
                 });
