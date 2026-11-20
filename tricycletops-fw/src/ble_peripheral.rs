@@ -1,8 +1,8 @@
+use defmt::{info, warn};
 use embassy_futures::join::join;
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::signal::Signal;
 use embassy_time::Timer;
-use log::{info, warn};
 use trouble_host::prelude::*;
 
 use crate::car_control::CarCommand;
@@ -75,7 +75,10 @@ pub async fn run<C>(
                     .await;
                 }
                 Err(e) => {
-                    warn!("[adv] advertising failed: {:?}, retrying...", e);
+                    warn!(
+                        "[adv] advertising failed: {:?}, retrying...",
+                        defmt::Debug2Format(&e)
+                    );
                     Timer::after_millis(100).await;
                 }
             }
@@ -88,7 +91,10 @@ pub async fn run<C>(
 async fn ble_task<C: Controller, P: PacketPool>(mut runner: Runner<'_, C, P>) {
     loop {
         if let Err(e) = runner.run().await {
-            warn!("[ble_task] runner error: {:?}, retrying...", e);
+            warn!(
+                "[ble_task] runner error: {:?}, retrying...",
+                defmt::Debug2Format(&e)
+            );
             Timer::after_millis(100).await;
         }
     }
@@ -139,13 +145,16 @@ async fn gatt_events_task<P: PacketPool>(
                 // in order to ensure reply is sent.
                 match reply {
                     Ok(reply) => reply.send().await,
-                    Err(e) => warn!("[gatt] error sending response: {:?}", e),
+                    Err(e) => warn!(
+                        "[gatt] error sending response: {:?}",
+                        defmt::Debug2Format(&e)
+                    ),
                 }
             }
             _ => {} // ignore other Gatt Connection Events
         }
     };
-    info!("[gatt] disconnected: {:?}", reason);
+    info!("[gatt] disconnected: {:?}", defmt::Debug2Format(&reason));
     Ok(())
 }
 

@@ -282,11 +282,11 @@ pub async fn cdc_task<D: Driver<'static>>(mut sender: Sender<'static, D>) -> ! {
                 }
 
                 if chunk.done {
-                    if was_max_packet {
-                        if let Err(EndpointError::Disabled) = sender.write_packet(&[]).await {
-                            disconnected = true;
-                            break;
-                        }
+                    if was_max_packet
+                        && let Err(EndpointError::Disabled) = sender.write_packet(&[]).await
+                    {
+                        disconnected = true;
+                        break;
                     }
                     read_cursor = 0;
                     break;
@@ -305,9 +305,7 @@ pub async fn cdc_task<D: Driver<'static>>(mut sender: Sender<'static, D>) -> ! {
 }
 
 /// Initializes the USB device and CDC-ACM class for logging.
-pub fn init_usb<D: Driver<'static>>(
-    driver: D,
-) -> (UsbDevice<'static, D>, Sender<'static, D>) {
+pub fn init_usb<D: Driver<'static>>(driver: D) -> (UsbDevice<'static, D>, Sender<'static, D>) {
     let mut config = Config::new(0xc0de, 0xcafe);
     config.manufacturer = Some("Tricycletops");
     config.product = Some("Tricycletops Defmt Logger");
@@ -343,6 +341,5 @@ pub async fn run<D: Driver<'static>>(driver: D) -> ! {
     let (mut usb, sender) = init_usb(driver);
     let usb_fut = usb.run();
     let cdc_fut = cdc_task(sender);
-    embassy_futures::join::join(usb_fut, cdc_fut).await;
-    loop {}
+    match embassy_futures::join::join(usb_fut, cdc_fut).await {}
 }

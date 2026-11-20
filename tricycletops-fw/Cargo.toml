@@ -19,7 +19,6 @@ static_cell = "2.1.0"
 portable-atomic = { version = "1.5.1", features = ["critical-section"] }
 critical-section = "1.2"
 defmt = "1.1.1"
-log = "0.4.28"
 
 [target.'cfg(not(all(target_arch = "arm", target_os = "none")))'.dependencies]
 embassy-time = { version = "0.5.0", features = ["generic-queue-64"] }
@@ -50,8 +49,6 @@ cyw43-pio = { version = "0.10.0", features = ["defmt"] }
 trouble-host = { version = "0.7.0", features = ["defmt", "gatt", "derive"] }
 cortex-m = { version = "0.7.6", features = ["inline-asm"] }
 cortex-m-rt = "0.7.0"
-defmt-rtt = "1.1.0"
-embassy-usb-logger = "0.6.0"
 embassy-usb = { version = "0.6.0", features = ["defmt"] }
 panic-probe = { version = "1.0.0", features = ["print-defmt"] }
 
@@ -66,4 +63,3 @@ embassy-sync = { version = "0.8.0", git = "https://github.com/embassy-rs/embassy
 embassy-executor = { version = "0.10.0", git = "https://github.com/embassy-rs/embassy.git", rev = "1d3c3de"}
 embassy-time = { version = "0.5.1", git = "https://github.com/embassy-rs/embassy.git", rev = "1d3c3de"}
 embassy-usb = { version = "0.6.0", git = "https://github.com/embassy-rs/embassy.git", rev = "1d3c3de"}
-embassy-usb-logger = { version = "0.6.0", git = "https://github.com/embassy-rs/embassy.git", rev = "1d3c3de"}
