@@ -8,7 +8,7 @@ use embassy_sync::signal::Signal;
 use panic_probe as _;
 
 use tricycletops_fw::ble_peripheral;
-use tricycletops_fw::board::{self, Board};
+use tricycletops_fw::board::Board;
 use tricycletops_fw::car_control::{CarCommand, CarControl, car_control_task};
 use tricycletops_fw::indicator::{self, IndicatorState};
 use tricycletops_fw::usb_logger;
@@ -19,12 +19,14 @@ static INDICATOR_SIGNAL: Signal<ThreadModeRawMutex, IndicatorState> = Signal::ne
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
-    let board = Board::init().await;
+    let board = Board::init();
 
     spawner.spawn(usb_logger::logger_task(board.usb_driver).unwrap());
     info!("Board initialized, USB logging active");
 
-    spawner.spawn(board::cyw43_task(board.cyw43_runner).unwrap());
+    let ble_controller = ble_peripheral::init(spawner, board.cyw43_pwr, board.cyw43_spi).await;
+    info!("CYW43 and BLE controller initialized");
+
     spawner.spawn(indicator::indicator_task(board.led_pin, &INDICATOR_SIGNAL).unwrap());
 
     let car = CarControl::new(board.left_motor, board.right_motor);
@@ -33,7 +35,7 @@ async fn main(spawner: Spawner) {
 
     info!("Running BLE peripheral...");
     ble_peripheral::run(
-        board.ble_controller,
+        ble_controller,
         &CAR_COMMAND_SIGNAL,
         &INDICATOR_SIGNAL,
         duty_limits,

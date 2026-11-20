@@ -1,13 +1,45 @@
+use cyw43::aligned_bytes;
+use cyw43::bluetooth::BtDriver;
 use defmt::{info, warn};
+use embassy_executor::Spawner;
 use embassy_futures::join::join;
+use embassy_rp::gpio::Output;
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::signal::Signal;
 use embassy_time::Timer;
+use static_cell::StaticCell;
 use trouble_host::prelude::*;
 
+use crate::board::{Cyw43Runner, Cyw43Spi};
 use crate::car_control::CarCommand;
 use crate::indicator::IndicatorState;
 use crate::protocol::{DutyLimits, decode_drive_command, encode_drive_command, encode_duty_limits};
+
+static CYW43_STATE: StaticCell<cyw43::State> = StaticCell::new();
+
+pub type BleController = ExternalController<BtDriver<'static>, 10>;
+
+#[embassy_executor::task]
+pub async fn cyw43_task(runner: Cyw43Runner) -> ! {
+    runner.run().await
+}
+
+/// Initialize the CYW43 Wi-Fi/Bluetooth coprocessor and spawn its background runner.
+pub async fn init(spawner: Spawner, pwr: Output<'static>, spi: Cyw43Spi) -> BleController {
+    let fw = aligned_bytes!("../target/cyw43-firmware/43439A0.bin");
+    let clm = aligned_bytes!("../target/cyw43-firmware/43439A0_clm.bin");
+    let btfw = aligned_bytes!("../target/cyw43-firmware/43439A0_btfw.bin");
+    let nvram = aligned_bytes!("../target/cyw43-firmware/nvram_rp2040.bin");
+
+    let state = CYW43_STATE.init(cyw43::State::new());
+    let (_net_device, bt_device, mut control, cyw43_runner) =
+        cyw43::new_with_bluetooth(state, pwr, spi, fw, btfw, nvram).await;
+
+    spawner.spawn(cyw43_task(cyw43_runner).unwrap());
+    control.init(clm, cyw43::Config::default()).await;
+
+    ExternalController::new(bt_device)
+}
 
 /// Max number of connections
 const CONNECTIONS_MAX: usize = 1;
