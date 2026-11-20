@@ -18,6 +18,7 @@ Community projects like [`sunipkm/embassy-defmt-usb`](https://github.com/sunipkm
 - Stream `defmt` frames over the onboard micro-USB connector via USB CDC-ACM (`/dev/ttyACM0`) using `embassy-usb`.
 - Implement the transport in-tree under `src/usb_logger.rs`, incorporating architectural patterns from community reference crates (`sunipkm/embassy-defmt-usb`, `robjwells/defmt-embassy-usbserial`) while avoiding external dependency drift.
 - Ensure logger buffering is non-blocking so motor PWM and BLE tasks are never stalled when USB is disconnected or unread.
+- Support host unit testing (`cargo test-host`) for internal buffer management, packet slicing, and non-blocking frame-drop logic without ARM hardware dependencies.
 - Standardize host log decoding via `defmt-print`.
 
 **Non-Goals:**
@@ -58,6 +59,10 @@ Community projects like [`sunipkm/embassy-defmt-usb`](https://github.com/sunipkm
   defmt-print -e target/thumbv6m-none-eabi/release/tricycletops-fw serial --path /dev/ttyACM0 --dtr
   ```
 - **Rationale:** `defmt-print` reads the ELF symbol table from the target binary on the host to decode binary frames in real-time, displaying timestamps, file/line locations, and formatted messages.
+
+### 6. Decoupled Buffer Architecture for Host Unit Testing
+- **Decision:** Decouple `LogBuffer`, `Chunk`, and `Controller` logic from hardware peripherals so they compile and run under host target configurations (`cargo test-host`), while keeping `#[defmt::global_logger]`, USB builder, and CDC tasks gated to `#[cfg(all(target_arch = "arm", target_os = "none"))]`.
+- **Rationale:** The safety-critical properties of the logger—specifically bounded buffer writes, non-blocking packet slicing up to `MAX_PACKET_SIZE`, and dropping excess frames on overflow without stalling or panicking—are purely algorithmic. Decoupling them allows rapid, automated regression testing on developer host machines without physical Pico hardware or runners.
 
 ## Risks / Trade-offs
 

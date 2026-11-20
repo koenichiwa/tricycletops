@@ -1,69 +1,75 @@
-#![cfg(all(target_arch = "arm", target_os = "none"))]
-
 //! In-tree `defmt` USB transport using `embassy-usb` CDC-ACM.
 //!
-//! Provides a `#[defmt::global_logger]` implementation that buffers defmt frames
-//! in a double-buffered queue and drains them asynchronously to the USB host via CDC-ACM.
-
-use core::cell::UnsafeCell;
-use core::future::poll_fn;
-use core::sync::atomic::{AtomicBool, Ordering};
-use core::task::Poll;
+//! Provides decoupled double-buffered queue and chunk framing logic for host unit testing,
+//! alongside a `#[defmt::global_logger]` implementation and asynchronous CDC-ACM drain task
+//! for ARM Cortex-M targets.
 
 use embassy_sync::waitqueue::AtomicWaker;
-use embassy_usb::class::cdc_acm::{CdcAcmClass, Sender, State};
-use embassy_usb::driver::{Driver, EndpointError};
-use embassy_usb::{Builder, Config, UsbDevice};
-use static_cell::StaticCell;
 
-const BUFFER_SIZE: usize = 1024;
-const MAX_PACKET_SIZE: usize = 64;
+pub const BUFFER_SIZE: usize = 1024;
+pub const MAX_PACKET_SIZE: usize = 64;
 
 static WAKER: AtomicWaker = AtomicWaker::new();
 
-struct LogBuffer {
+#[derive(Debug)]
+pub struct LogBuffer {
     data: [u8; BUFFER_SIZE],
     cursor: usize,
 }
 
 impl LogBuffer {
-    const fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             data: [0u8; BUFFER_SIZE],
             cursor: 0,
         }
     }
 
-    fn remaining(&self) -> usize {
+    pub fn remaining(&self) -> usize {
         BUFFER_SIZE - self.cursor
     }
 
-    fn write(&mut self, bytes: &[u8]) -> usize {
+    pub fn cursor(&self) -> usize {
+        self.cursor
+    }
+
+    pub fn data(&self) -> &[u8] {
+        &self.data[..self.cursor]
+    }
+
+    pub fn write(&mut self, bytes: &[u8]) -> usize {
         let n = bytes.len().min(self.remaining());
         self.data[self.cursor..self.cursor + n].copy_from_slice(&bytes[..n]);
         self.cursor += n;
         n
     }
 
-    fn reset(&mut self) {
+    pub fn reset(&mut self) {
         self.cursor = 0;
     }
 }
 
-struct Chunk {
-    data: [u8; MAX_PACKET_SIZE],
-    len: usize,
-    done: bool,
+impl Default for LogBuffer {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
-struct Controller {
-    buffers: [LogBuffer; 2],
-    active: usize,
-    flush_pending: bool,
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Chunk {
+    pub data: [u8; MAX_PACKET_SIZE],
+    pub len: usize,
+    pub done: bool,
+}
+
+pub struct Controller {
+    pub(crate) buffers: [LogBuffer; 2],
+    pub(crate) active: usize,
+    pub(crate) flush_pending: bool,
 }
 
 impl Controller {
-    const fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             buffers: [LogBuffer::new(), LogBuffer::new()],
             active: 0,
@@ -71,7 +77,7 @@ impl Controller {
         }
     }
 
-    fn write(&mut self, bytes: &[u8]) {
+    pub fn write(&mut self, bytes: &[u8]) {
         let written = self.buffers[self.active].write(bytes);
         if written < bytes.len() {
             // Active buffer is full. If the alternate buffer is available, swap immediately.
@@ -86,7 +92,7 @@ impl Controller {
         }
     }
 
-    fn on_frame_end(&mut self) {
+    pub fn on_frame_end(&mut self) {
         if self.buffers[self.active].cursor > 0 && !self.flush_pending {
             self.flush_pending = true;
             self.active ^= 1;
@@ -94,11 +100,11 @@ impl Controller {
         }
     }
 
-    fn is_flush_pending(&self) -> bool {
+    pub fn is_flush_pending(&self) -> bool {
         self.flush_pending
     }
 
-    fn get_chunk(&mut self, read_cursor: &mut usize, max_len: usize) -> Chunk {
+    pub fn get_chunk(&mut self, read_cursor: &mut usize, max_len: usize) -> Chunk {
         let max_len = max_len.min(MAX_PACKET_SIZE);
         if !self.flush_pending {
             return Chunk {
@@ -133,13 +139,32 @@ impl Controller {
         Chunk { data, len, done }
     }
 
-    fn reset_on_disconnect(&mut self) {
+    pub fn reset_on_disconnect(&mut self) {
         let flush_idx = self.active ^ 1;
         self.buffers[flush_idx].reset();
         self.flush_pending = false;
     }
 }
 
+impl Default for Controller {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(all(target_arch = "arm", target_os = "none"))]
+use {
+    core::cell::UnsafeCell,
+    core::future::poll_fn,
+    core::sync::atomic::{AtomicBool, Ordering},
+    core::task::Poll,
+    embassy_usb::class::cdc_acm::{CdcAcmClass, Sender, State},
+    embassy_usb::driver::{Driver, EndpointError},
+    embassy_usb::{Builder, Config, UsbDevice},
+    static_cell::StaticCell,
+};
+
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 struct UsbLogger {
     taken: AtomicBool,
     restore: UnsafeCell<critical_section::RestoreState>,
@@ -147,10 +172,13 @@ struct UsbLogger {
     controller: UnsafeCell<Controller>,
 }
 
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 unsafe impl Sync for UsbLogger {}
 
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 static LOGGER: UsbLogger = UsbLogger::new();
 
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 impl UsbLogger {
     const fn new() -> Self {
         Self {
@@ -216,9 +244,11 @@ impl UsbLogger {
     }
 }
 
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 #[defmt::global_logger]
 struct UsbDefmtLogger;
 
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 unsafe impl defmt::Logger for UsbDefmtLogger {
     fn acquire() {
         LOGGER.acquire();
@@ -238,6 +268,7 @@ unsafe impl defmt::Logger for UsbDefmtLogger {
 }
 
 /// Drains buffered defmt frames to the USB host over CDC-ACM.
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 pub async fn cdc_task<D: Driver<'static>>(mut sender: Sender<'static, D>) -> ! {
     let packet_size = (sender.max_packet_size() as usize).min(MAX_PACKET_SIZE);
 
@@ -305,6 +336,7 @@ pub async fn cdc_task<D: Driver<'static>>(mut sender: Sender<'static, D>) -> ! {
 }
 
 /// Initializes the USB device and CDC-ACM class for logging.
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 pub fn init_usb<D: Driver<'static>>(driver: D) -> (UsbDevice<'static, D>, Sender<'static, D>) {
     let mut config = Config::new(0xc0de, 0xcafe);
     config.manufacturer = Some("Tricycletops");
@@ -337,6 +369,7 @@ pub fn init_usb<D: Driver<'static>>(driver: D) -> (UsbDevice<'static, D>, Sender
 }
 
 /// All-in-one runner that joins USB device task and CDC-ACM logger drain task.
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 pub async fn run<D: Driver<'static>>(driver: D) -> ! {
     let (mut usb, sender) = init_usb(driver);
     let usb_fut = usb.run();
@@ -345,6 +378,7 @@ pub async fn run<D: Driver<'static>>(driver: D) -> ! {
 }
 
 /// Embassy executor task that runs the USB device and CDC-ACM logger.
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 #[embassy_executor::task]
 pub async fn logger_task(driver: crate::board::UsbDriver) -> ! {
     run(driver).await

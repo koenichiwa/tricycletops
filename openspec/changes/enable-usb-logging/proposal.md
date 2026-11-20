@@ -15,6 +15,7 @@ Community crates like `embassy-defmt-usb` (https://github.com/sunipkm/embassy-de
 - Revert application code (`src/main.rs`, `src/car_control.rs`, `src/ble_peripheral.rs`) back to `defmt::*` macros (`info!`, `warn!`, `debug!`, `error!`) and `Debug2Format`.
 - Keep RP2040 USB controller interrupt binding (`USBCTRL_IRQ`) in `board.rs` and spawn the `src/usb_logger.rs` async task in `main.rs`.
 - Stream binary `defmt` frames over the USB CDC-ACM virtual serial port (`/dev/ttyACM0`), decoded on host machines via `defmt-print`.
+- Decouple buffer management and framing logic in `src/usb_logger.rs` from ARM hardware peripherals to enable host unit testing (`cargo test-host`).
 - Update `README.md` and `GEMINI.md` to document the unified `defmt` workflow and host-side `defmt-print` usage.
 
 ## Capabilities
@@ -29,6 +30,8 @@ Community crates like `embassy-defmt-usb` (https://github.com/sunipkm/embassy-de
 
 - **Firmware (`tricycletops-fw`)**:
   - `Cargo.toml`: Removes `embassy-usb-logger` and `log`. Leverages existing `embassy-usb` dependency and adds the in-tree `src/usb_logger.rs` transport.
+  - `src/lib.rs`: Exposes `usb_logger` for host test targets while keeping hardware drivers gated to ARM.
+  - `src/usb_logger.rs`: Implements decoupled buffer structures (`LogBuffer`, `Controller`) with unit tests alongside ARM-specific CDC-ACM transport.
   - `src/main.rs`: Reverts to `defmt::*` and spawns the `src/usb_logger.rs` CDC drain task.
   - `src/car_control.rs`, `src/ble_peripheral.rs`: Reverts to `defmt::*` macros.
   - `src/board.rs`: Retains USB driver initialization and `USBCTRL_IRQ` binding.
