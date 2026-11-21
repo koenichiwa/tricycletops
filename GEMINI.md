@@ -119,7 +119,7 @@ Run these checks before finalizing changes to ensure CI and pre-commit hooks pas
 1. **Embedded Constraints (`no_std`)**:
    - The target environment is strictly `#![no_std]` and `#![no_main]`. Dynamic memory allocation (`alloc`) is **disabled**; all resources must be statically allocated. Use `StaticCell` for dynamic structures that require `'static` lifetimes.
 2. **Dual Library/Binary Architecture & Host Testing**:
-   - `src/lib.rs` exports decoupled modules (`protocol`, `car_control`, `motor_control`, `indicator`) with target-gated Cortex-M dependencies, enabling fast host-based unit tests (`cargo test-host`) without requiring target hardware.
+   - `src/lib.rs` exports decoupled modules (`protocol`, `car_control`, `motor_control`, `indicator`) with target-gated Cortex-M dependencies, enabling fast host-based unit tests (`mise run fw-test-host`) without requiring target hardware.
    - `src/board.rs` encapsulates RP2040 GPIO pins, PWM slices, DMA channels, and CYW43 wireless initialization into a dedicated Board Support Package (BSP).
 3. **Autonomous Command Watchdog & Disconnection Failsafe**:
    - `CarControl::run` enforces an autonomous 500ms watchdog timeout (`embassy_time::with_timeout`). If no drive command is received within 500ms, or when a GATT disconnection occurs, motors are immediately halted to prevent runaway vehicle behavior.

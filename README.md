@@ -19,28 +19,29 @@ tricycletops/
 
 ## System Prerequisites & Tools Installation
 
-### 1. Firmware Tooling (`tricycletops-fw`)
+### 1. Task Runner & Environment (`mise`)
+
+This project uses [mise](https://mise.jdx.dev/) as a task runner and environment manager. `mise` automatically handles the installation of the tools used in this project.
+```sh
+# Installation
+curl -fsSL https://mise.run | sh
+
+# Quick setup for zsh
+zshrc="${ZDOTDIR:-$HOME}/.zshrc"
+activation='eval "$(mise activate zsh)"'
+mkdir -p "$(dirname "$zshrc")"
+
+grep -qxF "$activation" "$zshrc" 2>/dev/null || printf '%s\n' "$activation" >> "$zshrc"
+```
 
 To compile and flash Rust firmware to the RP2040 micro-controller, install the following:
 
-*   **Rust Toolchain**: Use [rustup](https://rustup.rs/) to install Rust.
-*   **Arm Cortex-M0+ Target**: Install the compilation target for the RP2040:
-    ```bash
-    rustup target add thumbv6m-none-eabi
-    ```
 *   **Picotool**: Required to flash the RP2040 board over a USB cable without a debugger. Follow the [Raspberry Pi Picotool Installation Guide](https://github.com/raspberrypi/picotool) to compile or install it on your OS.
-*   **Defmt Tooling (`defmt-print`)**: Required to stream and decode live binary `defmt` logs over USB CDC-ACM serial:
-    ```bash
-    cargo install defmt-print
-    ```
 *   **Probe-rs (Optional)**: If you use a physical SWD debug probe (like another Pico running Picoprobe), install [probe-rs](https://probe.rs/) to flash and debug in real-time.
 
-### 2. Android App Tooling (`tricycletops-app`)
+### 3. Android App Tooling (`tricycletops-app`)
 
-To compile and run the Android app:
-
-*   **Java Development Kit (JDK 17 or higher)**: Download and install JDK from [Eclipse Temurin](https://adoptium.net/).
-*   **Android Studio**: Install the official IDE from [Android Studio Download](https://developer.android.com/studio). This automatically configures the Android SDK and build tools.
+*   **Android Studio**: Install the official IDE from [Android Studio Download](https://developer.android.com/studio).
 
 ---
 
@@ -52,14 +53,14 @@ To compile and run the Android app:
     Run a fast syntax and type check on the project:
     ```bash
     cargo check --target thumbv6m-none-eabi
-    # OR 
+    # OR
     mise run fw-check
     ```
 2.  **Run host unit tests**:
     Execute fast unit tests on your host machine without physical hardware:
     ```bash
     cargo test --target host-tuple
-    # OR 
+    # OR
     mise run fw-test-host
     ```
 3.  **Build the binary**:

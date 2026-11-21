@@ -21,6 +21,7 @@ java = "21"
 
 # Rust / Embassy
 rust = "nightly"
+"cargo:defmt-print" = "latest"
 
 [tasks]
 # Android
