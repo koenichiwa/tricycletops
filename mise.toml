@@ -1,0 +1,39 @@
+
+[settings]
+experimental = true
+minimum_release_age_excludes = ["android:*"]
+
+[plugins]
+"vfox-backend:android" = "https://github.com/mnalmahmud/mise-android"
+
+[tools]
+# Pre-commit
+pre-commit = "latest"
+
+# Android
+java = "21"
+
+# Android SDK
+"android:sdk" = "36"
+"android:platform-tools" = "latest"
+"android:build-tools" = "36.0.0"
+"android:cmdline-tools" = "latest"
+
+# Rust / Embassy
+rust = "nightly"
+
+[tasks]
+# Android
+android-build = "./tricycletops-app/gradlew -p tricycletops-app build"
+android-test = "./tricycletops-app/gradlew -p tricycletops-app test"
+android-lint = "./tricycletops-app/gradlew -p tricycletops-app lint"
+android-install = "./tricycletops-app/gradlew -p tricycletops-app installDebug"
+
+# Firmware
+fw-flash = "cd tricycletops-fw && cargo build"
+fw-build = "cd tricycletops-fw && cargo build"
+fw-check = "cd tricycletops-fw && cargo check"
+fw-test-host = "cd tricycletops-fw && cargo test --target host-tuple"
+
+# General
+doctor = "java -version && rustc --version && cargo --version && adb version"
