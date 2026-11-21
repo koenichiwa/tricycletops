@@ -2,7 +2,7 @@
 
 ## 1. Tooling Setup
 
-- [ ] 1.1 Create `mise.toml` at the repository root containing toolchains (java 21, rust nightly) and task aliases (`android-build`, `android-test`, `fw-flash`, etc.) and verify `mise tasks` outputs the expected targets.
+- [x] 1.1 Create `mise.toml` at the repository root containing toolchains (java 21, rust nightly) and task aliases (`android-build`, `android-test`, `fw-flash`, etc.) and verify `mise tasks` outputs the expected targets.
 
 ## Workflow follow-up
 
