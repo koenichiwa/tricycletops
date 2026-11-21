@@ -47,24 +47,24 @@ The characteristic `fff2` exposes the minimum (deadband) and maximum PWM duty cy
 
 ### 🔌 Firmware (`tricycletops-fw`)
 
-All firmware commands must be run inside the `tricycletops-fw/` directory:
+Firmware commands can be run from the repository root via `mise`:
 
 * **Host Unit Tests**:
   ```bash
-  cargo test-host
+  mise run fw-test-host
   ```
 * **Syntax & Type Check**:
   ```bash
-  cargo check --target thumbv6m-none-eabi
+  mise run fw-check
   ```
 * **Build (Release Profile)**:
   ```bash
-  cargo build --release --target thumbv6m-none-eabi
+  mise run fw-build
   ```
   *Note: Compiling downloads the CYW43 Wi-Fi/Bluetooth binaries via `build.rs` into `target/cyw43-firmware/`.*
 * **Flash & Run (via USB / picotool)**:
   ```bash
-  cargo run
+  mise run fw-flash
   ```
   *Note: The runner command is defined in `.cargo/config.toml`. Ensure the Pico W is in BOOTSEL mode (hold button while plugging in USB).*
 * **Debugging & Log Stream**:
@@ -76,15 +76,15 @@ All firmware commands must be run inside the `tricycletops-fw/` directory:
 
 ### 📱 Android Application (`tricycletops-app`)
 
-All app commands must be run inside the `tricycletops-app/` directory:
+Android app commands can be run from the repository root via `mise`:
 
 * **Compile & Build Debug APK**:
   ```bash
-  ./gradlew assembleDebug
+  mise run android-build
   ```
 * **Run Local Unit Tests**:
   ```bash
-  ./gradlew test
+  mise run android-test
   ```
 * **Install and Deploy**:
   Open the project in **Android Studio**, connect a physical Android device (with USB debugging enabled) or emulator, and click the **Run 'app'** button (`Shift + F10`).
@@ -103,7 +103,7 @@ Run these checks before finalizing changes to ensure CI and pre-commit hooks pas
   ```
 * **Lint Android App**:
   ```bash
-  cd tricycletops-app && ./gradlew lint
+  mise run android-lint
   ```
 * **Run Pre-Commit Hooks**:
   ```bash

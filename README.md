@@ -48,51 +48,56 @@ To compile and run the Android app:
 
 ### 🛠️ Setting up and Running the Firmware
 
-1.  **Navigate to the firmware directory**:
-    ```bash
-    cd tricycletops-fw
-    ```
-2.  **Verify compilation**:
+1.  **Verify compilation**:
     Run a fast syntax and type check on the project:
     ```bash
     cargo check --target thumbv6m-none-eabi
+    # OR 
+    mise run fw-check
     ```
-3.  **Run host unit tests**:
+2.  **Run host unit tests**:
     Execute fast unit tests on your host machine without physical hardware:
     ```bash
-    cargo test-host
+    cargo test --target host-tuple
+    # OR 
+    mise run fw-test-host
     ```
-4.  **Build the binary**:
+3.  **Build the binary**:
     Compile the release-optimized binary:
     ```bash
     cargo build --release --target thumbv6m-none-eabi
+    # OR
+    mise run fw-build
     ```
     *Note: The compilation automatically downloads the necessary Cyw43 Wi-Fi/Bluetooth firmware binaries into `target/cyw43-firmware/` via `build.rs`.*
-5.  **Flash the RP2040 / Pi Pico W**:
-    *   **Using Picotool (USB)**: Put your Pico W into BOOTSEL mode by holding the `BOOTSEL` button while plugging in the USB cable. Then run:
+4.  **Flash the RP2040 / Pi Pico W**:
+    *   **Using Picotool (Recommended)**: Put your Pico W into BOOTSEL mode by holding the `BOOTSEL` button while plugging in the USB cable. Then run:
         ```bash
         cargo run
+        # OR
+        mise run fw-flash
         ```
+        You need picotool installed for this. See https://github.com/raspberrypi/picotool
         This invokes `picotool load -u -v -x -t elf` as defined in `.cargo/config.toml` to load and automatically start the program.
-    *   **Using Probe-rs (Debugger)**: Edit `.cargo/config.toml` to swap the runner to `probe-rs run --chip RP2040` and execute `cargo run`.
+    *   **Using Probe-rs (Debugger)**: Edit `.cargo/config.toml` to swap the runner to `probe-rs run --chip RP2040` and execute `mise run fw-flash`.
 
 ---
 
 ### 📱 Setting up and Running the Android App
 
-1.  **Navigate to the app directory**:
-    ```bash
-    cd tricycletops-app
-    ```
-2.  **Compile and build the Debug APK**:
+1.  **Compile and build the Debug APK**:
     Use the Gradle wrapper to build the package:
     ```bash
     ./gradlew assembleDebug
+    # OR
+    mise run android-build
     ```
-3.  **Run tests**:
+2.  **Run tests**:
     Validate build sanity by executing the unit tests:
     ```bash
     ./gradlew test
+    # OR
+    mise run android-test
     ```
 4.  **Install on a Device/Emulator**:
     - Open the `tricycletops-app` folder inside **Android Studio**.
